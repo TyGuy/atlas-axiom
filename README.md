@@ -37,12 +37,13 @@ python --version
 pip install --user pipenv
 ```
 
-Clone this repo:
+Clone this repo (**NOTE: this project uses git submodules, so be sure to include the option below**):
 ```sh
-git clone https://github.com/TyGuy/atlas-axiom.git
+git clone --recurse-submodules https://github.com/TyGuy/atlas-axiom.git
 cd atlas-axiom
 ```
 
+As mentioned above, the project uses a submodule for the [gcodeplot](https://github.com/TyGuy/gcodeplot) library, which turns an image into GCode, and is forked from https://github.com/arpruss/gcodeplot (in case we need to make our own custom changes).
 
 ---
 
