@@ -1,0 +1,3 @@
+[submodule "gcodeplot"]
+	path = gcodeplot
+	url = https://github.com/TyGuy/gcodeplot.git
