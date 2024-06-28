@@ -45,9 +45,9 @@ def run_motor(steps, speed, direction):
 
 # Example usage
 try:
-    GPIO.ouptut(PUL_PIN, GPIO.HIGH)
-    GPIO.ouptut(DIR_PIN, GPIO.HIGH)
-    GPIO.ouptut(ENA_PIN, GPIO.HIGH)
+    GPIO.output(PUL_PIN, GPIO.HIGH)
+    GPIO.output(DIR_PIN, GPIO.HIGH)
+    GPIO.output(ENA_PIN, GPIO.HIGH)
     time.sleep(1000)
 
     # enable_driver()
