@@ -13,12 +13,12 @@ GPIO.setup(DIR_PIN, GPIO.OUT)
 # GPIO.setup(ENA_PIN, GPIO.OUT)
 
 # Function to enable the motor driver
-# def enable_driver():
-#     GPIO.output(ENA_PIN, GPIO.HIGH)  # Enable driver (LOW to enable, HIGH to disable)
+def enable_driver():
+    GPIO.output(ENA_PIN, GPIO.HIGH)  # Enable driver (LOW to enable, HIGH to disable)
 
-# # Function to disable the motor driver
-# def disable_driver():
-#     GPIO.output(ENA_PIN, GPIO.LOW)  # Disable driver
+# Function to disable the motor driver
+def disable_driver():
+    GPIO.output(ENA_PIN, GPIO.LOW)  # Disable driver
 
 # Function to set the direction of the motor
 def set_direction(direction):
@@ -45,7 +45,7 @@ def run_motor(steps, speed, direction):
 
 # Example usage
 try:
-    # enable_driver()
+    enable_driver()
     while True:
         # Run the motor clockwise for 1000 steps at 1000 pulses per second
         print("Running motor CW")
@@ -58,5 +58,5 @@ try:
         print("Sleeping for 10 seconds")
         time.sleep(10)  # Wait for 1 second
 except KeyboardInterrupt:
-    # disable_driver()
+    disable_driver()
     GPIO.cleanup()
