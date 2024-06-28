@@ -10,7 +10,7 @@ ENA_PIN = 24  # Enable pin (optional)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PUL_PIN, GPIO.OUT)
 GPIO.setup(DIR_PIN, GPIO.OUT)
-# GPIO.setup(ENA_PIN, GPIO.OUT)
+GPIO.setup(ENA_PIN, GPIO.OUT)
 
 # Function to enable the motor driver
 def enable_driver():
