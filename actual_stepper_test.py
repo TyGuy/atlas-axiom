@@ -45,18 +45,23 @@ def run_motor(steps, speed, direction):
 
 # Example usage
 try:
-    enable_driver()
-    while True:
-        # Run the motor clockwise for 1000 steps at 1000 pulses per second
-        print("Running motor CW")
-        run_motor(100, 100, "CW")
-        print("Sleeping for 10 seconds")
-        time.sleep(10)  # Wait for 1 second
-        # Run the motor counter-clockwise for 1000 steps at 1000 pulses per second
-        print("Running motor CCW")
-        run_motor(100, 100, "CCW")
-        print("Sleeping for 10 seconds")
-        time.sleep(10)  # Wait for 1 second
+    GPIO.ouptut(PUL_PIN, GPIO.HIGH)
+    GPIO.ouptut(DIR_PIN, GPIO.HIGH)
+    GPIO.ouptut(ENA_PIN, GPIO.HIGH)
+    time.sleep(1000)
+
+    # enable_driver()
+    # while True:
+    #     # Run the motor clockwise for 1000 steps at 1000 pulses per second
+    #     print("Running motor CW")
+    #     run_motor(100, 100, "CW")
+    #     print("Sleeping for 10 seconds")
+    #     time.sleep(10)  # Wait for 1 second
+    #     # Run the motor counter-clockwise for 1000 steps at 1000 pulses per second
+    #     print("Running motor CCW")
+    #     run_motor(100, 100, "CCW")
+    #     print("Sleeping for 10 seconds")
+    #     time.sleep(10)  # Wait for 1 second
 except KeyboardInterrupt:
     disable_driver()
     GPIO.cleanup()
