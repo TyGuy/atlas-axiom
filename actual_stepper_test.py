@@ -9,8 +9,8 @@ ENA_PIN = 24  # Enable pin (optional)
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PUL_PIN, GPIO.OUT)
-GPIO.setup(DIR_PIN, GPIO.OUT)
-GPIO.setup(ENA_PIN, GPIO.OUT)
+# GPIO.setup(DIR_PIN, GPIO.OUT)
+# GPIO.setup(ENA_PIN, GPIO.OUT)
 
 # Function to enable the motor driver
 def enable_driver():
@@ -53,20 +53,20 @@ try:
     # enable_driver()
     while True:
         # Run the motor clockwise for 1000 steps at 1000 pulses per second
-        print("Running motor CW")
-
-        GPIO.output(PUL_PIN, GPIO.HIGH)
+        print("Running motor")
+        send_pulses(1000, 100)
+        # GPIO.output(PUL_PIN, GPIO.HIGH)
         # run_motor(100, 100, "CW")
-        print("Sleeping for 1 seconds")
-        time.sleep(1)  # Wait for 1 second
+        print("Sleeping for 5 seconds")
+        time.sleep(5)  # Wait for 1 second
         # Run the motor counter-clockwise for 1000 steps at 1000 pulses per second
 
-        print("Running motor CCW")
+        # print("Running motor CCW")
 
-        GPIO.output(PUL_PIN, GPIO.LOW)
+        # GPIO.output(PUL_PIN, GPIO.LOW)
         # run_motor(100, 100, "CCW")
-        print("Sleeping for 1 seconds")
-        time.sleep(1)  # Wait for 1 second
+        # print("Sleeping for 1 seconds")
+        # time.sleep(1)  # Wait for 1 second
 except KeyboardInterrupt:
     # disable_driver()
     GPIO.cleanup()
