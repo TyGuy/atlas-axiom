@@ -54,7 +54,7 @@ try:
     while True:
         # Run the motor clockwise for 1000 steps at 1000 pulses per second
         print("Running motor")
-        send_pulses(1000, 100)
+        send_pulses(1000, 100 / 1000)
         # GPIO.output(PUL_PIN, GPIO.HIGH)
         # run_motor(100, 100, "CW")
         print("Sleeping for 5 seconds")
