@@ -9,7 +9,7 @@ ENA_PIN = 24  # Enable pin (optional)
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PUL_PIN, GPIO.OUT)
-# GPIO.setup(DIR_PIN, GPIO.OUT)
+GPIO.setup(DIR_PIN, GPIO.OUT)
 # GPIO.setup(ENA_PIN, GPIO.OUT)
 
 # Function to enable the motor driver
@@ -31,42 +31,29 @@ def set_direction(direction):
 def send_pulses(steps, delay):
     for _ in range(steps):
         GPIO.output(PUL_PIN, GPIO.HIGH)
-        print("Pulse high")
+        # print("Pulse high")
         time.sleep(delay)
         GPIO.output(PUL_PIN, GPIO.LOW)
-        print("Pulse low")
+        # print("Pulse low")
         time.sleep(delay)
 
 # Function to run the motor
-def run_motor(steps, speed, direction):
+def run_motor(steps, delay, direction):
     set_direction(direction)
-    delay = 1.0 / (2 * speed)  # Delay between pulses 1 / 200 = 0.005 seconds
     send_pulses(steps, delay)
 
 # Example usage
 try:
-    # GPIO.output(PUL_PIN, GPIO.HIGH)
-    # GPIO.output(DIR_PIN, GPIO.HIGH)
-    # GPIO.output(ENA_PIN, GPIO.HIGH)
-    # time.sleep(1000)
-
-    # enable_driver()
     while True:
         # Run the motor clockwise for 1000 steps at 1000 pulses per second
-        print("Running motor")
-        send_pulses(1000,  2 / 1000.0)
-        # GPIO.output(PUL_PIN, GPIO.HIGH)
-        # run_motor(100, 100, "CW")
+        print("Running motor CW")
+        run_motor(1000,  2 / 1000.0, "CW")
         print("Sleeping for 5 seconds")
         time.sleep(5)  # Wait for 1 second
         # Run the motor counter-clockwise for 1000 steps at 1000 pulses per second
+        print("Running motor CCW")
+        run_motor(1000, 2 / 1000.0, "CCW")
 
-        # print("Running motor CCW")
-
-        # GPIO.output(PUL_PIN, GPIO.LOW)
-        # run_motor(100, 100, "CCW")
-        # print("Sleeping for 1 seconds")
-        # time.sleep(1)  # Wait for 1 second
 except KeyboardInterrupt:
     # disable_driver()
     GPIO.cleanup()
