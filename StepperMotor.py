@@ -5,7 +5,7 @@ import time
 class StepperMotor:
     STEPS_PER_REVOLUTION = 400 # controlled by DIP switches
     # Delay between pulses; This will control speed of motor
-    DEFAULT_DELAY = 2 / 1000.0
+    DEFAULT_DELAY = 250 / (1000.0 * 1000.0)
 
     def __init__(self, pulse_pin, direction_pin):
         # if pulse_pin is None or not between 40, raise:
