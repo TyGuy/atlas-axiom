@@ -39,7 +39,7 @@ DIR_PIN = 23  # Direction pin
 
 # Example usage
 try:
-    stepper_motor = StepperMotor(PUL_PIN, DIR_PIN)
+    stepper_motor = StepperMotor(PUL_PIN, DIR_PIN, speed=2)
 
     while True:
         print("Running motor CW")
