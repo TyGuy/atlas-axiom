@@ -57,6 +57,10 @@ function install_pipenv {
     pip install pipenv
 }
 
+function install_other_python_deps {
+    pip install Pillow
+}
+
 # Main script execution
 PYTHON_VERSION="3.12"
 
@@ -74,5 +78,7 @@ install_python_via_pyenv $PYTHON_VERSION
 if ! check_pipenv_installed; then
     install_pipenv
 fi
+
+install_other_python_deps
 
 echo "Installation completed. Python $PYTHON_VERSION and pipenv are ready to use."
