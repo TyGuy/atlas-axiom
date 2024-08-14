@@ -14,7 +14,7 @@ LOWER_LIGHTS_PIN = 16
 
 burn_manager = None
 
-def handle_termination():
+def handle_termination(burn_manager):
     """Handle termination signals gracefully."""
     def signal_handler(sig, frame):
         print("Received termination signal. Shutting down gracefully...")
@@ -25,12 +25,14 @@ def handle_termination():
     signal.signal(signal.SIGTERM, signal_handler)
 
 def init():
+    global burn_manager
     ser = serial.Serial(GRBL_port_path, BAUD_RATE)
     GPIO.setmode(GPIO.BCM) 
     burn_manager = BurnManager(basefile_name, ser, GPIO)
     
 def loop():
-    handle_termination()
+    global burn_manager
+    handle_termination(burn_manager)
 
     try:
         burn_manager.start()
