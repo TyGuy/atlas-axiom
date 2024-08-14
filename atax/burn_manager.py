@@ -119,7 +119,7 @@ class BurnManager:
             # draw_file_at_position(self.ser, image_file, x, y)
             time.sleep(10)
             # this also handles removing the file if we've processed the last thing.
-            self.state_manager.mark_user_image_processed(image_file)
+            self.state_manager.mark_user_image_processed(image_num)
 
         # After burning, clear the user sequence and reset the waiting flag
         print("User image sequence completed. Marking position processed.")
