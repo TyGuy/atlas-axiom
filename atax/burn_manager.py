@@ -110,7 +110,7 @@ class BurnManager:
         y = user_position["y"]
         print(f"Burning user images: at position {pos_name} ({x}, {y})")
 
-        with open(self.state_manager.user_sequence_file, "r") as file:
+        with open(self.state_manager.user_image_sequence_file, "r") as file:
             user_images = [line.strip() for line in file.readlines()]
 
         for image_num in user_images:
