@@ -49,12 +49,14 @@ class BurnManager:
     def start(self):
         """Start the burn process and the monitor thread."""
         self.is_running = True
+        self.gas_igniter.turn_on()
         self.burn_thread.start()
         self.monitor_thread.start()
 
     def stop(self):
         """Gracefully stop the burn process."""
         self.is_running = False
+        self.gas_igniter.turn_off()
         if self.burn_thread.is_alive():
             self.burn_thread.join()
         if self.monitor_thread.is_alive():
@@ -126,8 +128,10 @@ class BurnManager:
         """Handle the cooldown period between burns."""
         print("Entering rest period. Turning off solenoid...")
         self.gas_igniter.turn_off()
+        print("Solenoid turned off. Resting for 30 seconds...")
         time.sleep(30)
-        print("Rest period completed. Turning on solenoid...")
+        print("Rest period completed. Turning on solenoid and igniter...")
         self.gas_igniter.turn_on()
+        print("It's lit.")
         with self.lock:
             self.resting = False  # End rest period, ready to burn again
