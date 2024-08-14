@@ -92,9 +92,9 @@ class BurnManager:
         to_burn_list = self.state_manager.get_to_burn_list()
 
         if to_burn_list:
-            next_file = to_burn_list.pop(0)
+            next_file = to_burn_list[0]
             print(f"Burning base image segment: {next_file}")
-            draw_gcode_file(self.ser, next_file)
+            # draw_gcode_file(self.ser, next_file)
             print(f"Base image segment burned: {next_file}; marking as processed.")
             self.state_manager.mark_base_image_segement_burned(next_file)
 
