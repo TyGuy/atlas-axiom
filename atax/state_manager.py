@@ -44,6 +44,7 @@ class StateManager:
             base_image_folder = os.path.join("images/base", self.basefile_name)
             base_image_files = os.listdir(base_image_folder)
             random.shuffle(base_image_files)
+            base_image_files = [os.path.join(base_image_folder, file) for file in base_image_files]
             self.base_image_state = {
                 "to_burn": base_image_files,
                 "burned": []
