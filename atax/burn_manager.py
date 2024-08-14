@@ -116,7 +116,8 @@ class BurnManager:
         for image_num in user_images:
             image_file = os.path.join(user_image_path, user_image_filenames[int(image_num)])
             print(f"\tBurning user image: {image_file}")
-            draw_file_at_position(self.ser, image_file, x, y)
+            end_at_zero = (image_num == user_images[-1])
+            draw_file_at_position(self.ser, image_file, x, y, end_at_zero)
             # time.sleep(10)
             # this also handles removing the file if we've processed the last thing.
             self.state_manager.mark_user_image_processed(image_num)

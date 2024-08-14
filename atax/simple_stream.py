@@ -66,7 +66,7 @@ def wait_for_movement_completion(ser,cleaned_line = None):
                 break
     return
 
-def draw_file_at_position(ser, gcode_path, x=0, y=0):
+def draw_file_at_position(ser, gcode_path, x=0, y=0, end_at_zero = False):
     with open(gcode_path, "r") as file:
         startup_lines = f"""
         G54
@@ -75,11 +75,13 @@ def draw_file_at_position(ser, gcode_path, x=0, y=0):
         G55
         """
 
-        ending_lines = """
-        G54
-        G0 X0 Y0
-        """
-        lines = startup_lines.split('\n') + file.readlines() + ending_lines.split('\n')
+        ending_lines = [
+        "G54"
+        ]
+        if (end_at_zero):
+            ending_lines += ["G0 X0 Y0"]
+
+        lines = startup_lines.split('\n') + file.readlines() + ending_lines
         stream_gcode_lines(ser, lines)
 
 def stream_gcode(ser,gcode_path, send_reset_first = True):
