@@ -79,7 +79,7 @@ class StateManager:
             self.user_positions_state = positions
         else:
             # If no positions are found, generate new ones, write to the file, and return them
-            positions = self.generate_new_positions(self.mode)
+            positions = self.generate_new_positions(self.image_mode)
             self.write_user_positions_to_file(positions)
             self.user_positions_state = positions
     
