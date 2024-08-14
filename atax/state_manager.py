@@ -140,6 +140,8 @@ class StateManager:
     
     def mark_user_image_processed(self, user_image):
         user_images = self._get_images_in_user_sequence()
+        print(f"Marking user image {user_image} as processed.")
+        print(f"User images remaining: {user_images}")
         # remove the matching value in the array, and write to file:
         user_images.remove(user_image)
 
@@ -147,8 +149,8 @@ class StateManager:
             self.clear_user_sequence()
         else:
             with open(self.user_image_sequence_file, "w") as file:
-                for image in user_images:
-                    file.write(f"{image}\n")
+                for image_num in user_images:
+                    file.write(f"{image_num}\n")
 
 
     def clear_user_sequence(self):
