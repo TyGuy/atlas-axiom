@@ -11,6 +11,10 @@ from datetime import datetime, timedelta
 from burngcodefile import burn_gcode
 
 
+# camera: people: count (prev & current)
+# 
+
+
 # Directory containing g code files
 G_FOLDER = 'todaysgcodefiles'
 destination_folder = 'burntfiles'

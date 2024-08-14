@@ -32,6 +32,7 @@ def remove_eol_chars(string):
     return string.strip()
 
 
+# NOTE: not sure if this is necessary, and incurs a slight delay.
 def send_wake_up(ser):
     # Wake up
     # Hit enter a few times to wake the Printrbot
@@ -81,16 +82,17 @@ def draw_file_at_position(ser, gcode_path, x=0, y=0):
         lines = startup_lines.split('\n') + file.readlines() + ending_lines.split('\n')
         stream_gcode_lines(ser, lines)
 
-def stream_gcode(GRBL_port_path,gcode_path):
-    stream_gcode_file_with_reset(GRBL_port_path,gcode_path)
+def stream_gcode(ser,gcode_path, send_reset_first = True):
+    draw_gcode_file(ser,gcode_path, send_reset_first)
 
-def stream_gcode_file_with_reset(GRBL_port_path,gcode_path):
+def draw_gcode_file(ser,gcode_path, send_reset_first = True):
     # with contect opens file/connection and closes it if function(with) scope is left
-    with open(gcode_path, "r") as file, serial.Serial(GRBL_port_path, BAUD_RATE) as ser:
+    with open(gcode_path, "r") as file:
         startup_lines = """
         $RST=#
         G10 P1 L20 X0 Y0
-        """
+        """ if send_reset_first else ""
+
         lines = startup_lines.split('\n') + file.readlines()
         stream_gcode_lines(ser, lines)
 

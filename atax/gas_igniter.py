@@ -1,13 +1,16 @@
 import time
 
+DEFAULT_GAS_PIN = 27
+DEFAULT_IGNITER_PIN = 17
+
 class GasIgniter:
-    def __init__(self, gas_pin, igniter_pin, gpio):
+    def __init__(self, gpio, gas_pin = DEFAULT_GAS_PIN, igniter_pin = DEFAULT_IGNITER_PIN):
         """
         Initialize the GasIgniterController with the GPIO pins for the gas and igniter.
 
         :param gas_pin: GPIO pin number for the gas control.
         :param igniter_pin: GPIO pin number for the igniter control.
-        :param gpio: GPIO module to use (optional). If None, assumes GPIO is globally available.
+        :param gpio: GPIO module to use. This class assumes GPIO has been set up, but the pins have not.
         """
         self.gpio = gpio
         self.gas_pin = gas_pin
@@ -47,35 +50,32 @@ class GasIgniter:
     
 
     # main thing to use:
-    def turn_on(self, gas_duration = 5, igniter_duration=3):
+    def turn_on(self, gas_duration = 2, igniter_duration=3):
         """
         Sequence to turn on gas, ignite it, and then turn it off.
 
         :param duration: Duration (in seconds) to keep the igniter on.
         """
-        self.turn_on_gas()
+        self._turn_on_gas()
         time.sleep(gas_duration)
-        self.ignite_gas(igniter_duration)
+        self._ignite_gas(igniter_duration)
+        print("FLAME SHOULD BE ON! If not, stop this script and light the flame.")
     
     def turn_off(self):
         """Turn off the gas and igniter."""
-        self.turn_off_gas()
-        self.turn_off_igniter()
+        self._turn_off_gas()
+        self._turn_off_igniter()
 
 if __name__ == "__main__":
     import RPi.GPIO as GPIO
 
     GPIO.setmode(GPIO.BCM)  # Set GPIO mode to BCM
 
-    # Define the GPIO pins for gas and igniter
-    gas_pin = 17
-    igniter_pin = 27
 
     # Create an instance of the GasIgniterController
-    gas_igniter = GasIgniter(gas_pin, igniter_pin, GPIO)
+    # (Optionally, can override pins)
+    gas_igniter = GasIgniter(GPIO)
 
     # Example usage
-    gas_igniter.turn_on_gas()  # Turn gas on
-    time.sleep(5)  # Wait for 5 seconds
-    gas_igniter.ignite_gas()  # Ignite gas for the default duration (3 seconds)
-    gas_igniter.turn_off_gas()  # Turn gas off
+    gas_igniter.turn_on()
+    gas_igniter.turn_off()
