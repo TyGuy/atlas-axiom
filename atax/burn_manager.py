@@ -96,8 +96,8 @@ class BurnManager:
         if to_burn_list:
             next_file = to_burn_list[0]
             print(f"Burning base image segment: {next_file}")
-            # draw_gcode_file(self.ser, next_file)
-            time.sleep(10)
+            draw_gcode_file(self.ser, next_file)
+            # time.sleep(10)
             print(f"Base image segment burned: {next_file}; marking as processed.")
             self.state_manager.mark_base_image_segement_burned(next_file)
 
@@ -116,8 +116,8 @@ class BurnManager:
         for image_num in user_images:
             image_file = os.path.join(user_image_path, user_image_filenames[int(image_num)])
             print(f"\tBurning user image: {image_file}")
-            # draw_file_at_position(self.ser, image_file, x, y)
-            time.sleep(10)
+            draw_file_at_position(self.ser, image_file, x, y)
+            # time.sleep(10)
             # this also handles removing the file if we've processed the last thing.
             self.state_manager.mark_user_image_processed(image_num)
 
