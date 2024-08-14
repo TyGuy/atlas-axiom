@@ -33,11 +33,7 @@ class StateManager:
         self.load_state()
 
     def load_state(self):
-        if not os.path.exists(self.base_image_state_file):
-            self.initialize_base_image_state()
-        else:
-            self.load_base_image_state()
-
+        self.initialize_base_image_state()
         self.initialize_user_positions()
 
     ### Base images state:
