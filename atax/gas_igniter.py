@@ -44,9 +44,9 @@ class GasIgniter:
 
         :param duration: Duration (in seconds) to keep the igniter on.
         """
-        self.turn_on_igniter()
+        self._turn_on_igniter()
         time.sleep(duration)
-        self.turn_off_igniter()
+        self._turn_off_igniter()
     
 
     # main thing to use:
