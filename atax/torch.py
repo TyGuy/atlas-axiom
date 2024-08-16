@@ -2,8 +2,7 @@ import RPi.GPIO as GPIO
 from gas_igniter import GasIgniter
 
 if __name__ == "__main__":
-    GPIO.setmode(GPIO.BCM) 
-    gas_igniter = GasIgniter()
+    gas_igniter = GasIgniter(GPIO)
 
     while True:
         command = input("Enter command ('on'/'off'/'exit'): ").strip().lower()
