@@ -5,6 +5,7 @@ from state_manager import StateManager
 from gas_igniter import GasIgniter
 from simple_stream import draw_file_at_position, draw_gcode_file
 
+REST_TIME_IN_SECONDS = 20
 
 # TODO: could move user_image stuff to its own file.
 user_image_filenames = [
@@ -42,6 +43,7 @@ class BurnManager:
         self.is_burning = False  # Indicates whether an active burn is in progress
         self.user_sequence_waiting = False  # Flag indicating a user sequence is queued
         self.resting = False  # Flag indicating if the machine is in resting mode
+        self.resting_end_time = None
 
         self.burn_thread = threading.Thread(target=self.run_burn_cycle)
         self.monitor_thread = threading.Thread(target=self.monitor_user_input)
@@ -66,7 +68,12 @@ class BurnManager:
         """Main loop for handling the burning process."""
         while self.is_running:
             with self.lock:
-                if self.resting or self.is_burning:
+                if self.resting:
+                    if time.time() > self.resting_end_time:
+                        self.set_done_resting()
+                    continue
+
+                elif self.is_burning:
                     continue
 
                 if self.user_sequence_waiting:
@@ -77,9 +84,8 @@ class BurnManager:
                     self.process_base_image_segment()
 
                 self.is_burning = False  # Burn completed
-                self.resting = True  # Enter rest period
+                self.set_resting() # turn off flame and enter resting period.
 
-            self.handle_rest_period()
 
     def monitor_user_input(self):
         """Continuously monitor for user input indicating a new user sequence."""
@@ -127,14 +133,18 @@ class BurnManager:
         self.state_manager.mark_position_processed()
         self.user_sequence_waiting = False
 
-    def handle_rest_period(self):
+    def set_resting(self):
         """Handle the cooldown period between burns."""
         print("Entering rest period. Turning off solenoid...")
         self.gas_igniter.turn_off()
-        print("Solenoid turned off. Resting for 30 seconds...")
-        time.sleep(30)
+        print(f"Solenoid turned off. Resting for {REST_TIME_IN_SECONDS} seconds...")
+        # with self.lock:
+        self.resting = True
+        self.resting_end_time = time.time() + REST_TIME_IN_SECONDS
+    
+    def set_done_resting(self):
         print("Rest period completed. Turning on solenoid and igniter...")
         self.gas_igniter.turn_on()
         print("It's lit.")
-        with self.lock:
-            self.resting = False  # End rest period, ready to burn again
+        # with self.lock:
+        self.resting = False  # End rest period, ready to burn again

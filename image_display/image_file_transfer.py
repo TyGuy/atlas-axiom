@@ -46,7 +46,7 @@ source_pass = 'bugcat'
 target_ip = '10.0.0.63'  # Change to your target IP
 target_user = 'pi'  # Change to your target target_user
 target_pass = 'raspberry'  # Change to your target target_pass
-destination_path = f'/home/{target_user}/depthai-python/atax/atax_v1/user_selections.txt'
+destination_path = f'/home/{target_user}/atlas/state/user_selections.txt'
 
 # Use SCP to transfer the file
 scp_command = f"scp {file_path} {target_user}@{target_ip}:{destination_path}"

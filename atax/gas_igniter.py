@@ -78,4 +78,5 @@ if __name__ == "__main__":
 
     # Example usage
     gas_igniter.turn_on()
+    time.sleep(10)
     gas_igniter.turn_off()
