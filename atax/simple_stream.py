@@ -71,9 +71,12 @@ def go_to_origin(ser):
     command = ['G0 X0 Y0\n']
     stream_gcode_lines(ser, command)
 
-def go_to_position(ser, x, y):
-    command = ['G0 X' + str(x) + ' Y' + str(y) + '\n']
-    stream_gcode_lines(ser, command)
+def go_to_position(ser, x, y, z = None):
+    command = 'G0 X' + str(x) + ' Y' + str(y)
+    if z:
+        command += ' Z' + str(z)
+    command += '\n'
+    stream_gcode_lines(ser, [command])
 
 
 def draw_file_at_position(ser, gcode_path, x=0, y=0, end_at_zero = False):
