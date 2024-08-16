@@ -97,6 +97,14 @@ def draw_file_at_position(ser, gcode_path, x=0, y=0, end_at_zero = False):
 def stream_gcode(ser,gcode_path, send_reset_first = True):
     draw_gcode_file(ser,gcode_path, send_reset_first)
 
+def tell_machine_its_at_origin(ser):
+    startup_lines = """
+    $RST=#
+    G10 P1 L20 X0 Y0
+    """
+    stream_gcode_lines(ser, startup_lines.split('\n'))
+
+
 def draw_gcode_file(ser,gcode_path, send_reset_first = True):
     # with contect opens file/connection and closes it if function(with) scope is left
     with open(gcode_path, "r") as file:
