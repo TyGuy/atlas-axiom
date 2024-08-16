@@ -22,8 +22,8 @@ Y_MACHINE_OFFSET = 3.5
 burn_manager = None
 ser = None
 
-def validate_basefile(basefile):
-    global valid_basefiles
+def validate_basefile(basefile, valid_basefiles):
+    
     if basefile not in valid_basefiles:
         raise argparse.ArgumentTypeError(f"Invalid basefile: '{basefile}'. Must be one of {valid_basefiles}.")
     return basefile
@@ -69,8 +69,8 @@ def loop():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="The main burn loop for the amazing Atlas machine.")
-    parser.add_argument('basefile', type=lambda b: validate_basefile(b), 
-                        help=f"The basefile to use. Must be one of {', '.join(valid_basefiles)}.")
+    parser.add_argument('--basefile', type=lambda b: validate_basefile(b, valid_basefiles), 
+                        help=f"The basefile to use. Must be one of {', '.join(valid_basefiles)}.", default=None)
     args = parser.parse_args()
 
     init(args.basefile)
