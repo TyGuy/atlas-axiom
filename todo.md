@@ -7,9 +7,9 @@ critical:
   - [x] get it successfully running an unmodified gcode file (prob with script stuff before/after)
   - [x] burn multiple files
   - [x] get user-generated images to burn in a relative position (correct location)
-  - [ ] !!! process user-generated image queueing & burn loop, in threads in parallel with main base-image generation burn loop.
+  - [x] !!! process user-generated image queueing & burn loop, in threads in parallel with main base-image generation burn loop.
   - [ ] get camera, burn loops, and audio running in separate threads.
-  - [ ] test file saving in various failure scenarios (power going out / everything cutting at different times)
+  - [x] test file saving in various failure scenarios (power going out / everything cutting at different times)
   - [ ] get script into runnable format, taking in the base image reference that we want to burn in this session.
 - image-display pi:
   - [x] write function to stack images
