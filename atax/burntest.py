@@ -23,7 +23,7 @@ def handle_termination(burn_manager, ser):
     """Handle termination signals gracefully."""
     def signal_handler(sig, frame):
         print("Received termination signal. Shutting down gracefully...")
-        go_to_origin(ser)
+        go_to_position(ser, -X_MACHINE_OFFSET, -Y_MACHINE_OFFSET)
         burn_manager.stop()
         sys.exit(0)
     
@@ -51,7 +51,7 @@ def loop():
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        go_to_origin(ser)
+        go_to_position(ser, -X_MACHINE_OFFSET, -Y_MACHINE_OFFSET)
         burn_manager.stop()
         sys.exit(1)
 
