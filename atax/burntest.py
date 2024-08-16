@@ -69,7 +69,7 @@ def loop():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="The main burn loop for the amazing Atlas machine.")
-    parser.add_argument('basefile', type=lambda b: validate_basefile(b, valid_basefiles), 
+    parser.add_argument('basefile', type=lambda b: validate_basefile(b), 
                         help=f"The basefile to use. Must be one of {', '.join(valid_basefiles)}.")
     args = parser.parse_args()
 
