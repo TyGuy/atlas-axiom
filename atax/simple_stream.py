@@ -66,6 +66,12 @@ def wait_for_movement_completion(ser,cleaned_line = None):
                 break
     return
 
+def go_to_origin(ser):
+    # Go to origin
+    command = ['G0 X0 Y0\n']
+    stream_gcode_lines(ser, command)
+
+
 def draw_file_at_position(ser, gcode_path, x=0, y=0, end_at_zero = False):
     with open(gcode_path, "r") as file:
         startup_lines = f"""
@@ -118,7 +124,7 @@ def stream_gcode_lines(ser, lines):
             grbl_out = ser.readline()  # Wait for response with carriage return
             print(" : " , grbl_out.strip().decode('utf-8'))
 
-            if cur_line_num % batch_size == 0:
+            if cur_line_num % batch_size == 0 or cur_line_num == len(lines):
                 wait_for_movement_completion(ser,cleaned_line)
         
     print('End of gcode')

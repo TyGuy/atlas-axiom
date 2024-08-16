@@ -3,6 +3,7 @@ import signal
 import sys
 import RPi.GPIO as GPIO
 from burn_manager import BurnManager
+from simple_stream import go_to_origin
     
 # Global variables
 GRBL_port_path = '/dev/ttyACM0' # change port here if needed
@@ -13,11 +14,13 @@ UPPER_LIGHTS_PIN = 26
 LOWER_LIGHTS_PIN = 16
 
 burn_manager = None
+ser = None
 
-def handle_termination(burn_manager):
+def handle_termination(burn_manager, ser):
     """Handle termination signals gracefully."""
     def signal_handler(sig, frame):
         print("Received termination signal. Shutting down gracefully...")
+        go_to_origin(ser)
         burn_manager.stop()
         sys.exit(0)
     
@@ -25,14 +28,14 @@ def handle_termination(burn_manager):
     signal.signal(signal.SIGTERM, signal_handler)
 
 def init():
-    global burn_manager
+    global burn_manager, ser
     ser = serial.Serial(GRBL_port_path, BAUD_RATE)
     GPIO.setmode(GPIO.BCM) 
     burn_manager = BurnManager(basefile_name, ser, GPIO)
     
 def loop():
-    global burn_manager
-    handle_termination(burn_manager)
+    global burn_manager, ser
+    handle_termination(burn_manager, ser)
 
     try:
         burn_manager.start()
@@ -42,6 +45,7 @@ def loop():
 
     except Exception as e:
         print(f"An error occurred: {e}")
+        go_to_origin(ser)
         burn_manager.stop()
         sys.exit(1)
 
