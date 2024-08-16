@@ -103,6 +103,7 @@ def stream_gcode(ser,gcode_path, send_reset_first = True):
 def tell_machine_its_at_origin(ser):
     startup_lines = """
     $RST=#
+    G10 P0 L20 X0 Y0
     G10 P1 L20 X0 Y0
     """
     stream_gcode_lines(ser, startup_lines.split('\n'))
@@ -113,6 +114,7 @@ def draw_gcode_file(ser,gcode_path, send_reset_first = True):
     with open(gcode_path, "r") as file:
         startup_lines = """
         $RST=#
+        G10 P0 L20 X0 Y0
         G10 P1 L20 X0 Y0
         """ if send_reset_first else ""
 

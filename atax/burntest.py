@@ -1,13 +1,16 @@
+import argparse
 import serial
 import signal
 import sys
 import RPi.GPIO as GPIO
 from burn_manager import BurnManager
 from simple_stream import go_to_position, tell_machine_its_at_origin
+from base_image import base_image_modes
+
+valid_basefiles = list(base_image_modes.keys())
     
 # Global variables
 GRBL_port_path = '/dev/ttyACM0' # change port here if needed
-basefile_name = 'B1_heart_gear'
 BAUD_RATE = 115200
 # lights gpio
 UPPER_LIGHTS_PIN = 26
@@ -18,6 +21,12 @@ Y_MACHINE_OFFSET = 3.5
 
 burn_manager = None
 ser = None
+
+def validate_basefile(basefile):
+    global valid_basefiles
+    if basefile not in valid_basefiles:
+        raise argparse.ArgumentTypeError(f"Invalid basefile: '{basefile}'. Must be one of {valid_basefiles}.")
+    return basefile
 
 def handle_termination(burn_manager, ser):
     """Handle termination signals gracefully."""
@@ -31,7 +40,7 @@ def handle_termination(burn_manager, ser):
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-def init():
+def init(basefile_name):
     global burn_manager, ser
     ser = serial.Serial(GRBL_port_path, BAUD_RATE)
     GPIO.setmode(GPIO.BCM) 
@@ -59,5 +68,10 @@ def loop():
         sys.exit(1)
 
 if __name__ == "__main__":
-    init()
+    parser = argparse.ArgumentParser(description="The main burn loop for the amazing Atlas machine.")
+    parser.add_argument('basefile', type=lambda b: validate_basefile(b, valid_basefiles), 
+                        help=f"The basefile to use. Must be one of {valid_basefiles.join(', ')}.")
+    args = parser.parse_args()
+
+    init(args.basefile)
     loop()
