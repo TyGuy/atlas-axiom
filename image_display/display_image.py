@@ -3,6 +3,11 @@ import sys
 import serial
 import time
 
+#to do 
+# add functionality to send "ready" over serial when the user selections.txt file has finished burning on the burn pi
+
+
+
 # Initialize Pygame
 pygame.init()
 
@@ -52,7 +57,7 @@ def load_image(image_name):
         image = pygame.transform.scale(image, (screen_width, screen_height))
         return image
     except pygame.error as e:
-        print(f"Error loading image: {e}")
+        print(f"Error loading image {image_name}: {e}")
         return None
 
 def overlay_images(base_image, overlay_image):
@@ -94,6 +99,8 @@ while running:
                     current_image = overlay_images(current_image, selected_overlay)
                 # Save selected images to file
                 save_selections(selected_images)
+                # Send "submitted" message through serial
+                ser.write(b'submitted\n')
             elif data.isdigit():
                 image_key = int(data)
                 if image_key in image_files:
