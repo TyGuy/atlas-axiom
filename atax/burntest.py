@@ -3,7 +3,7 @@ import signal
 import sys
 import RPi.GPIO as GPIO
 from burn_manager import BurnManager
-from simple_stream import go_to_origin
+from simple_stream import go_to_origin, go_to_position
     
 # Global variables
 GRBL_port_path = '/dev/ttyACM0' # change port here if needed
@@ -12,6 +12,9 @@ BAUD_RATE = 115200
 # lights gpio
 UPPER_LIGHTS_PIN = 26
 LOWER_LIGHTS_PIN = 16
+
+X_MACHINE_OFFSET = 1
+Y_MACHINE_OFFSET = 3.5
 
 burn_manager = None
 ser = None
@@ -32,6 +35,9 @@ def init():
     ser = serial.Serial(GRBL_port_path, BAUD_RATE)
     GPIO.setmode(GPIO.BCM) 
     burn_manager = BurnManager(basefile_name, ser, GPIO)
+    # move to the origin:
+    go_to_position(ser, X_MACHINE_OFFSET, Y_MACHINE_OFFSET)
+
     
 def loop():
     global burn_manager, ser
