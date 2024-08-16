@@ -9,7 +9,7 @@ class StateManager:
 
     def __init__(self, basefile_name):
         self.basefile_name = basefile_name
-        self.image_mode = self.base_image_modes[basefile_name]
+        self.image_mode = base_image_modes[basefile_name]
         # All state files will be kept in "state" -- removing the files effectively clears the state.
         self.state_folder = "state/"
 
