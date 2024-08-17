@@ -23,10 +23,11 @@ import pygame
 GRBL_port_path = '/dev/ttyACM0'
 #burn_manager = BurnManager(basefile, GRBL_port_path, GPIO)
 
-
+import threading
 
 def play_random_audio(folder_path):
-    """Play a random audio file from the given folder in a separate process."""
+    """Play a random audio file from the given folder in a separate thread."""
+    
     def play_audio():
         try:
             # Initialize pygame mixer
@@ -60,10 +61,11 @@ def play_random_audio(folder_path):
             pygame.mixer.quit()
             print("pygame mixer quit.")
 
-    # Start a new process for audio playback
-    audio_process = multiprocessing.Process(target=play_audio)
-    audio_process.start()
-    return audio_process
+    # Start a new thread for audio playback
+    audio_thread = threading.Thread(target=play_audio)
+    audio_thread.start()
+    return audio_thread
+
 
 
 
