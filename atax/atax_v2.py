@@ -31,6 +31,7 @@ def play_random_audio(folder_path):
             print("No audio files found in the folder.")
             return
         audio_file = random.choice(audio_files)
+        print(f"Selected audio file: {audio_file}")
         playsound(os.path.join(folder_path, audio_file))
 
     # Start a new process for audio playback
@@ -100,12 +101,14 @@ with depthai.Device(pipeline) as device:
                 npeople = len(detections)
                 if npeople > prevpeople:
                     # Play random hello audio
+                    print("play from folder hello")
                     audio_process = play_random_audio('audiofiles/hello')
                     prevpeople = npeople
                     
                 elif npeople < prevpeople:
                     # Play random bye audio
                     audio_process = play_random_audio('audiofiles/bye')
+                    print("play from folder bye")
                     prevpeople = npeople
                 elif npeople == 0:
                     # Stay asleep play snoring noise
