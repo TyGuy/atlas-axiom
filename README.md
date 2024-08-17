@@ -1,43 +1,46 @@
 # Atlas Axiom Robot Code
 
-This repo contains code for a robot which holds a torch and burns patterns/art into a 2D surface like wood.
+This repo contains code The Atlas / Axiom robot.
 
-From a code / control perspective, it can be thought of as a fancy, fire-wielding plotter.
+## Usage:
+Structure:
+* Things in `atax` are for the "main pi" / drawing pi
+* Things in `image_display` are for the "image display" pi
+* Things in `images` contain `user` and `base` for user-selected gcode image files and base image file segments, respectively.
+* Things in `state` control state. 3 files.
 
-## Required components
-* Raspberry Pi (using raspberry pi 2 model B)
-* Arduino connected to CNC Atlas machine and set up running GRBL (aka Stepper motors, sensors, etc)
-* Pi connected to Arduino via serial connection
-
-## Setup
-On your raspberry pi, startt by cloning the repo (**NOTE: this project uses git submodules, so be sure to include the option below**):
-```sh
-git clone --recurse-submodules https://github.com/TyGuy/atlas-axiom.git
-cd atlas-axiom
+### running the thing
+```shell
+cd ~/atlas
+# needs to be run from atlas directory, not atax; run it like this:
+python atax/burntest.py --basefile B1_heart_gear # also, make sure this is not inconsistent with what's in the state file.
 ```
 
-Install pyenv, python 3, and pipenv via this script:
-```sh
-./scripts/install_python_deps.sh
+### Running arbitrary gcode
+```shell
+cd ~/atlas
+python atax/gcode_repl.py
+# then type any gcode, and enter it. Type "exit" to quit.
 ```
 
-Install java & UGS (Universal GCode sender) via this script:
-```sh
-./scripts/install_java_and_ugs.sh
+### Running just the torch
+```shell
+cd ~/atlas
+python atax/torch.py
+# then type "on" to turn it on, "off" to turn it off, "exit" to exit.
 ```
 
-## Running UGS
-Run UGS using `./scripts/start_ugs.sh`
-* Doing it this way also adds a "port" option of 8080, so we can optionally connect to UGS via a local REST API if desired.
+### Starting UGS
+Just run `start_ugs` from anywhere.
 
----
-
-## The plan [WIP, out of date]
-At a high level, the software components we need to find and/or build are:
-* User input collector -> take in some words, or combination of button presses, for example
-* Image generator -> choose an image based on the input (either AI gen, predefined set, something else)
-* GCode generator -> convert an image (some file format) to GCode
-* GCode executor -> convert GCode to mechanics (X/Y movement, open/close solenoid, change distance or aperature)
+### Other notes:
+* Make sure the thing is at machine 0,0 (below/left of canvas 0,0), and that Z is at 0, before starting the script
+* Also make sure the machine knows where it is. You can run reset commands manually from the above script, but UGS is the best way to be sure.
+  * You should re-zero twice (zero, disconnect & reconnect, and zero again)
+* Make sure you're not trying to connect from
+* Check state files before/after running
+* Type `ctrl-C` to stop the script(s). This will end it gracefully, finishing gcode commands, returning to origin (and Z0), and turning off the torch.
+  * Hit `ctrl-C` twice to stop the burntest script immediately. This will not go back to origin and do cleanup stuff; but GRBL will finish whatever gcode command(s) it has received.
 
 ---
 
