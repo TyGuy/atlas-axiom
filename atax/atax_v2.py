@@ -111,10 +111,10 @@ with depthai.Device(pipeline) as device:
                     # Stay asleep play snoring noise
                     prevpeople = npeople 
 
- """            for detection in detections:
+            for detection in detections:
                 bbox = frameNorm(frame, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
                 cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), 2)
-            cv2.imshow("preview", frame) """
+            cv2.imshow("preview", frame)
 
         if cv2.waitKey(1) == ord('q'):
             break
