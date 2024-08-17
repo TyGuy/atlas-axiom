@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from burn_manager import BurnManager
 from state_manager import StateManager
 import RPi.GPIO as GPIO
+import pygame
 
 # Initialize StateManager
 #basefile = "path_to_basefile"  # Replace with the actual basefile path
@@ -26,13 +27,17 @@ GRBL_port_path = '/dev/ttyACM0'
 def play_random_audio(folder_path):
     """Play a random audio file from the given folder in a separate process."""
     def play_audio():
+        pygame.mixer.init()
         audio_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.mp3', '.wav'))]
         if not audio_files:
             print("No audio files found in the folder.")
             return
         audio_file = random.choice(audio_files)
         print(f"Selected audio file: {audio_file}")
-        playsound(os.path.join(folder_path, audio_file))
+        pygame.mixer.music.load(os.path.join(folder_path, audio_file))
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():  # Wait until the audio is done playing
+            pygame.time.Clock().tick(10)
 
     # Start a new process for audio playback
     audio_process = multiprocessing.Process(target=play_audio)
