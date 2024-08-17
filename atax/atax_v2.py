@@ -14,13 +14,13 @@ from state_manager import StateManager
 import RPi.GPIO as GPIO
 
 # Initialize StateManager
-basefile = "path_to_basefile"  # Replace with the actual basefile path
-state_manager = StateManager(basefile)
+#basefile = "path_to_basefile"  # Replace with the actual basefile path
+#state_manager = StateManager(basefile)
 
 # Initialize BurnManager
 # Port of GRBL device check in dev folder usually /dev/ttyACM0
 GRBL_port_path = '/dev/ttyACM0'
-burn_manager = BurnManager(basefile, GRBL_port_path, GPIO)
+#burn_manager = BurnManager(basefile, GRBL_port_path, GPIO)
 
 
 def play_random_audio(folder_path):
