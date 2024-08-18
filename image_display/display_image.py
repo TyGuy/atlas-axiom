@@ -167,6 +167,7 @@ while running:
                     current_image = overlay_images(current_image, selected_overlay)
                 # Save selected images to file
                 save_selections(selected_images)
+                ser.write(b'lockout\n')
                 # Wait until the target machine processes and deletes the file
                 wait_for_no_file_on_target()
             elif data.isdigit():
