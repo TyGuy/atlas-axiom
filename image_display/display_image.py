@@ -100,7 +100,7 @@ def save_selections(selections):
     except Exception as e:
         print(f"Error occurred during file transfer: {e}")
 
-    ser.write(b'ready\n') #tell GC its ready for user selections
+    ser.write(b'OPEN\n') #tell GC its ready for user selections
 
 def file_exists_on_target():
     """Check if the selections.txt file exists on the target machine."""
@@ -145,20 +145,20 @@ while running:
             last_command = data
             last_command_time = current_time
 
-            if data == 'reset':
+            if data == 'RESET':
                 current_image = None
                 screen.fill((0, 0, 0))
                 last_two_images = [None, None]
                 selected_images = []
-            elif data == 'start':
+            elif data == 'START':
                 current_image = start_image
                 last_two_images = [None, None]
                 selected_images = []
-            elif data == 'submit':
+            elif data == 'SUBMIT':
                 if current_image and selected_overlay:
                     current_image = overlay_images(current_image, selected_overlay)
                 save_selections(selected_images)
-                ser.write(b'lockout\n') # issue lock out to GC
+                ser.write(b'LOCKOUT\n') # issue lock out to GC
                 wait_for_no_file_on_target()
             elif data.isdigit():
                 image_key = int(data)
