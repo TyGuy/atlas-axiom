@@ -1,6 +1,5 @@
 import pygame
 import sys
-import serial
 import time
 import subprocess
 import os
@@ -36,15 +35,15 @@ image_files = {
     16: "Scale.png",
 }
 
-# Configure serial port
-serial_port = '/dev/ttyACM0'  # Replace with your serial port
-baud_rate = 9600
-ser = serial.Serial(serial_port, baud_rate, timeout=1)
+# Simulate serial data for testing
+test_commands = ['START', '2', '3', 'SUBMIT']
+command_index = 0
 
 # Initialize variables
 last_two_images = [None, None]
 current_image = None
 selected_images = []
+submit_received = False
 
 # To track the last command and its timestamp
 last_command = None
@@ -91,7 +90,6 @@ def save_selections(selections):
         result = subprocess.run(scp_command, capture_output=True, text=True)
         if result.returncode == 0:
             print("File transfer successful.")
-            wait_for_no_file_on_target()
             os.remove(file_path)
             print("File removed from the host machine.")
         else:
@@ -100,7 +98,7 @@ def save_selections(selections):
     except Exception as e:
         print(f"Error occurred during file transfer: {e}")
 
-
+    wait_for_no_file_on_target()  # Wait only after submitting and transferring the file
 
 def file_exists_on_target():
     """Check if the selections.txt file exists on the target machine."""
@@ -121,7 +119,27 @@ def wait_for_no_file_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
     print("No file found. Proceeding with serial data processing.")
-    ser.write(b'OPEN\n') #tell GC its ready for user selections
+    # Simulate OPEN command as part of testing (normally sent via serial)
+    print("OPEN")
+
+def delete_file_on_target():
+    """Delete the selections.txt file on the target machine if it exists."""
+    if file_exists_on_target():
+        print("Deleting existing selections.txt on the target machine...")
+        target_ip = '10.0.0.63'
+        target_user = 'pi'
+        target_pass = 'raspberry'
+        destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+
+        delete_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'rm {destination_path}'"
+        result = subprocess.run(delete_command, shell=True, capture_output=True)
+        if result.returncode == 0:
+            print("File deleted successfully on the target machine.")
+        else:
+            print(f"Failed to delete file on target: {result.stderr}")
+
+# Initial check: delete the existing file on target if it exists
+delete_file_on_target()
 
 # Load special images
 start_image = load_image("Start.png")
@@ -131,74 +149,74 @@ selected_overlay = load_image("Selected.png")
 running = True
 
 while running:
-    wait_for_no_file_on_target()
+    if command_index < len(test_commands):
+        data = test_commands[command_index]
+        command_index += 1
+    else:
+        running = False
+        continue
 
-    if ser.in_waiting > 0:
-        try:
-            data = ser.read().decode('utf-8').strip()
-            current_time = time.time()
+    try:
+        current_time = time.time()
 
-            # Check for duplicate command within 50 milliseconds
-            if data == last_command and (current_time - last_command_time) < 0.05:
-                continue  # Ignore this command if it's a duplicate
+        # Check for duplicate command within 50 milliseconds
+        if data == last_command and (current_time - last_command_time) < 0.05:
+            continue  # Ignore this command if it's a duplicate
 
-            # Update the last command and timestamp
-            last_command = data
-            last_command_time = current_time
+        # Update the last command and timestamp
+        last_command = data
+        last_command_time = current_time
 
-            if data == 'RESET':
-                current_image = None
-                screen.fill((0, 0, 0))
-                last_two_images = [None, None]
-                selected_images = []
-            elif data == 'START':
-                current_image = start_image
-                last_two_images = [None, None]
-                selected_images = []
-            elif data == 'SUBMIT':
-                if current_image and selected_overlay:
-                    current_image = overlay_images(current_image, selected_overlay)
-                save_selections(selected_images)
-                ser.write(b'LOCKOUT\n') # issue lock out to GC
-                wait_for_no_file_on_target()
-            elif data.isdigit():
-                image_key = int(data)
-                if image_key in image_files:
-                    if image_key not in selected_images:
-                        selected_images.append(image_key)
-                    
-                    # Keep only the last two selected images
-                    if len(selected_images) > 2:
-                        selected_images = selected_images[-2:]
-                    
-                    # Load the images to overlay
-                    last_two_images = [load_image(image_files[selected_images[0]]),
-                                       load_image(image_files[selected_images[1]])]
-                    
-                    # Determine the combined image
-                    current_image = overlay_images(last_two_images[0], last_two_images[1])
-                else:
-                    current_image = None
+        if data == 'RESET':
+            current_image = None
+            screen.fill((0, 0, 0))
+            last_two_images = [None, None]
+            selected_images = []
+        elif data == 'START':
+            current_image = start_image
+            last_two_images = [None, None]
+            selected_images = []
+        elif data == 'SUBMIT':
+            submit_received = True
+        elif data.isdigit():
+            image_key = int(data)
+            if image_key in image_files:
+                if image_key not in selected_images:
+                    selected_images.append(image_key)
+                
+                # Keep only the last two selected images
+                if len(selected_images) > 2:
+                    selected_images = selected_images[-2:]
+                
+                # Load the images to overlay
+                last_two_images = [load_image(image_files[selected_images[0]]),
+                                   load_image(image_files[selected_images[1]])]
+                
+                # Determine the combined image
+                current_image = overlay_images(last_two_images[0], last_two_images[1])
             else:
                 current_image = None
-
-        except ValueError:
+        else:
             current_image = None
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            running = False
+    except ValueError:
+        current_image = None
 
+    # Render the current image on the screen
     screen.fill((0, 0, 0))
     if current_image:
         screen.blit(current_image, (0, 0))
-
     pygame.display.flip()
+
+    # Check if SUBMIT was received, and handle saving and file checking
+    if submit_received:
+        if current_image and selected_overlay:
+            current_image = overlay_images(current_image, selected_overlay)
+        save_selections(selected_images)  # Save selections and start the file removal process
+        print("LOCKOUT")  # Simulate LOCKOUT command as part of testing
+        submit_received = False  # Reset the flag
+
     time.sleep(0.1)
 
-if ser.is_open:
-    ser.close()
 pygame.quit()
 sys.exit()
