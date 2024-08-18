@@ -121,6 +121,7 @@ def wait_for_no_file_on_target():
     print("No file found. Proceeding with serial data processing.")
     # Simulate OPEN command as part of testing (normally sent via serial)
     print("OPEN")
+    ser.write(b'OPEN\n')  # Send OPEN command via serial once the file is not found
 
 def delete_file_on_target():
     """Delete the selections.txt file on the target machine if it exists."""
@@ -213,7 +214,8 @@ while running:
         if current_image and selected_overlay:
             current_image = overlay_images(current_image, selected_overlay)
         save_selections(selected_images)  # Save selections and start the file removal process
-        print("LOCKOUT")  # Simulate LOCKOUT command as part of testing
+        print("LOCKOUT")  # LOCKOUT
+        ser.write(b'LOCKOUT\n')  # Send OPEN command via serial once the file is not found
         submit_received = False  # Reset the flag
 
     time.sleep(0.1)
