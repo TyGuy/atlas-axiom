@@ -100,7 +100,7 @@ def save_selections(selections):
     except Exception as e:
         print(f"Error occurred during file transfer: {e}")
 
-    ser.write(b'OPEN\n') #tell GC its ready for user selections
+
 
 def file_exists_on_target():
     """Check if the selections.txt file exists on the target machine."""
@@ -121,6 +121,7 @@ def wait_for_no_file_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
     print("No file found. Proceeding with serial data processing.")
+    ser.write(b'OPEN\n') #tell GC its ready for user selections
 
 # Load special images
 start_image = load_image("Start.png")
