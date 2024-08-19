@@ -60,8 +60,10 @@ def load_image(image_name):
 
 def overlay_images(base_image, overlay_image):
     """Overlay one image on top of another."""
-    if base_image is None or overlay_image is None:
-        return overlay_image  # Return the overlay if base is None, or return None if both are None
+    if base_image is None:
+        return overlay_image
+    if overlay_image is None:
+        return base_image
     
     combined = base_image.copy()
     combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
@@ -183,11 +185,11 @@ while running:
                             selected_images = selected_images[-2:]
                         
                         # Load the images to overlay
-                        last_two_images = [load_image(image_files[selected_images[0]]),
-                                           load_image(image_files[selected_images[1]])]
+                        image1 = load_image(image_files[selected_images[0]]) if len(selected_images) > 0 else None
+                        image2 = load_image(image_files[selected_images[1]]) if len(selected_images) > 1 else None
                         
                         # Determine the combined image
-                        current_image = overlay_images(last_two_images[0], last_two_images[1])
+                        current_image = overlay_images(image1, image2)
 
                 key_buffer = ""  # Clear the buffer after processing
 
