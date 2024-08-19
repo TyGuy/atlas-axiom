@@ -141,6 +141,7 @@ def delete_file_on_target():
 
 # Initial check: delete the existing file on target if it exists
 delete_file_on_target()
+wait_for_no_file_on_target() #make the file doesnt exist and also issue an open command to start things up
 
 # Load special images
 start_image = load_image("Start.png")
