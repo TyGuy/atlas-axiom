@@ -65,10 +65,12 @@ def load_image(image_name):
 
 def overlay_images(base_image, overlay_image):
     """Overlay one image on top of another."""
-    if base_image is None or overlay_image is None:
-        return overlay_image  # Return the overlay if base is None, or return None if both are None
-    
+    if base_image is None:
+        return overlay_image  # If the base image is None, return the overlay image
+    if overlay_image is None:
+        return base_image  # If the overlay image is None, return the base image
     combined = base_image.copy()
+    
     # combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
     combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
     return combined
@@ -193,15 +195,20 @@ while running:
                 image_key = int(data)
                 if image_key in image_files:
                     if image_key not in selected_images:
-                        selected_images.append(image_key)
+                        selected_images.append(image_key) # store only unique selections
                     
                     # Keep only the last two selected images
                     if len(selected_images) > 2:
                         selected_images = selected_images[-2:]
                     
                     # Load the images to overlay
-                    last_two_images = [load_image(image_files[selected_images[0]]),
-                                       load_image(image_files[selected_images[1]])]
+                    if len(selected_images) == 1:
+                        last_two_images = [load_image(image_files[selected_images[0]]), None]
+                    elif len(selected_images) == 2:
+                        last_two_images = [load_image(image_files[selected_images[0]]), load_image(image_files[selected_images[1]])]
+                    else:
+                        last_two_images = [None, None]
+
                     
                     # Determine the combined image
                     current_image = overlay_images(last_two_images[0], last_two_images[1])
@@ -213,19 +220,22 @@ while running:
         except ValueError:
             current_image = None
 
+    # Check if SUBMIT was received, and handle saving and file checking
+    if submit_received:
+        if len(selected_images) > 0:
+            if current_image and selected_overlay:
+                current_image = overlay_images(current_image, selected_overlay)
+            save_selections(selected_images)  # Save selections and start the file removal process
+            ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
+            submit_received = False # Reset the flag
+        else:
+            submit_received = False # Reset the flag
+    
     # Render the current image on the screen
     screen.fill((0, 0, 0))
     if current_image:
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
-
-    # Check if SUBMIT was received, and handle saving and file checking
-    if submit_received:
-        if current_image and selected_overlay:
-            current_image = overlay_images(current_image, selected_overlay)
-        save_selections(selected_images)  # Save selections and start the file removal process
-        ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
-        submit_received = False  # Reset the flag
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
