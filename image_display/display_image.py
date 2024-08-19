@@ -56,7 +56,7 @@ def load_image(image_name):
     """Load an image and scale it to fit the screen."""
     try:
         image_path = f'for_display_blue/{image_name}'
-        image = pygame.image.load(image_path)
+        image = pygame.image.load(image_path).convert_alpha()
         image = pygame.transform.scale(image, (screen_width, screen_height))
         return image
     except pygame.error as e:
@@ -72,7 +72,7 @@ def overlay_images(base_image, overlay_image):
     combined = base_image.copy()
     
     # combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-    combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+    combined.blit(overlay_image, (0, 0))
     return combined
 
 def save_selections(selections):
