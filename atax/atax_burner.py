@@ -1,13 +1,10 @@
 from pathlib import Path
-import cv2
+# import cv2 # needed only to draw video
 import depthai
 import numpy as np
 from playsound import playsound
-import time
 import os
 import random
-import shutil
-import multiprocessing
 from datetime import datetime, timedelta
 import RPi.GPIO as GPIO
 import pygame
