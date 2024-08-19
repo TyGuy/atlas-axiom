@@ -3,6 +3,7 @@ import sys
 import time
 import subprocess
 import os
+import signal
 
 # Initialize Pygame
 pygame.init()
@@ -15,7 +16,7 @@ screen_height = info.current_h
 # Set up the display in fullscreen mode
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
 
-# Define the mapping of serial commands to image files
+# Define the mapping of keyboard inputs to image files
 image_files = {
     1: "Gear.png",
     2: "Boat.png",
@@ -35,15 +36,12 @@ image_files = {
     16: "Scale.png",
 }
 
-# Simulate serial data for testing
-test_commands = ['START', '2', '3', 'SUBMIT']
-command_index = 0
-
 # Initialize variables
 last_two_images = [None, None]
 current_image = None
 selected_images = []
 submit_received = False
+key_buffer = ""  # Buffer to hold key presses
 
 # To track the last command and its timestamp
 last_command = None
@@ -62,8 +60,10 @@ def load_image(image_name):
 
 def overlay_images(base_image, overlay_image):
     """Overlay one image on top of another."""
-    if base_image is None or overlay_image is None:
-        return overlay_image  # Return the overlay if base is None, or return None if both are None
+    if base_image is None:
+        return overlay_image
+    if overlay_image is None:
+        return base_image
     
     combined = base_image.copy()
     combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
@@ -118,10 +118,7 @@ def wait_for_no_file_on_target():
     while file_exists_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
-    print("No file found. Proceeding with serial data processing.")
-    # Simulate OPEN command as part of testing (normally sent via serial)
-    print("OPEN")
-    ser.write(b'OPEN\n')  # Send OPEN command via serial once the file is not found
+    print("No file found. Proceeding with data processing.")
 
 def delete_file_on_target():
     """Delete the selections.txt file on the target machine if it exists."""
@@ -139,9 +136,17 @@ def delete_file_on_target():
         else:
             print(f"Failed to delete file on target: {result.stderr}")
 
+# Graceful shutdown handling
+def graceful_shutdown(signum, frame):
+    print("Shutting down gracefully...")
+    pygame.quit()
+    sys.exit()
+
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
+
 # Initial check: delete the existing file on target if it exists
 delete_file_on_target()
-wait_for_no_file_on_target() #make the file doesnt exist and also issue an open command to start things up
 
 # Load special images
 start_image = load_image("Start.png")
@@ -151,58 +156,52 @@ selected_overlay = load_image("Selected.png")
 running = True
 
 while running:
-    if command_index < len(test_commands):
-        data = test_commands[command_index]
-        command_index += 1
-    else:
-        running = False
-        continue
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            current_time = time.time()
 
-    try:
-        current_time = time.time()
+            if event.key == pygame.K_RETURN:  # Handle Enter key press
+                if key_buffer == "R":
+                    current_image = None
+                    screen.fill((0, 0, 0))
+                    last_two_images = [None, None]
+                    selected_images = []
+                elif key_buffer == "O":
+                    current_image = start_image
+                    last_two_images = [None, None]
+                    selected_images = []
+                elif key_buffer == "S":
+                    submit_received = True
+                elif key_buffer.isdigit():
+                    image_key = int(key_buffer)
+                    if image_key in image_files:
+                        if image_key not in selected_images:
+                            selected_images.append(image_key)
+                        
+                        # Keep only the last two selected images
+                        if len(selected_images) > 2:
+                            selected_images = selected_images[-2:]
+                        
+                        # Load the images to overlay
+                        image1 = load_image(image_files[selected_images[0]]) if len(selected_images) > 0 else None
+                        image2 = load_image(image_files[selected_images[1]]) if len(selected_images) > 1 else None
+                        
+                        # Determine the combined image
+                        current_image = overlay_images(image1, image2)
 
-        # Check for duplicate command within 50 milliseconds
-        if data == last_command and (current_time - last_command_time) < 0.05:
-            continue  # Ignore this command if it's a duplicate
+                key_buffer = ""  # Clear the buffer after processing
 
-        # Update the last command and timestamp
-        last_command = data
-        last_command_time = current_time
-
-        if data == 'RESET':
-            current_image = None
-            screen.fill((0, 0, 0))
-            last_two_images = [None, None]
-            selected_images = []
-        elif data == 'START':
-            current_image = start_image
-            last_two_images = [None, None]
-            selected_images = []
-        elif data == 'SUBMIT':
-            submit_received = True
-        elif data.isdigit():
-            image_key = int(data)
-            if image_key in image_files:
-                if image_key not in selected_images:
-                    selected_images.append(image_key)
-                
-                # Keep only the last two selected images
-                if len(selected_images) > 2:
-                    selected_images = selected_images[-2:]
-                
-                # Load the images to overlay
-                last_two_images = [load_image(image_files[selected_images[0]]),
-                                   load_image(image_files[selected_images[1]])]
-                
-                # Determine the combined image
-                current_image = overlay_images(last_two_images[0], last_two_images[1])
             else:
-                current_image = None
-        else:
-            current_image = None
-
-    except ValueError:
-        current_image = None
+                if event.key == pygame.K_r:
+                    key_buffer = "R"
+                elif event.key == pygame.K_o:
+                    key_buffer = "O"
+                elif event.key == pygame.K_s:
+                    key_buffer = "S"
+                elif pygame.K_0 <= event.key <= pygame.K_9:
+                    key_buffer += chr(event.key)
 
     # Render the current image on the screen
     screen.fill((0, 0, 0))
@@ -215,8 +214,7 @@ while running:
         if current_image and selected_overlay:
             current_image = overlay_images(current_image, selected_overlay)
         save_selections(selected_images)  # Save selections and start the file removal process
-        print("LOCKOUT")  # LOCKOUT
-        ser.write(b'LOCKOUT\n')  # Send OPEN command via serial once the file is not found
+        print("LOCKOUT")  # Simulate LOCKOUT
         submit_received = False  # Reset the flag
 
     time.sleep(0.1)
