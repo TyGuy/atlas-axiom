@@ -69,7 +69,8 @@ def overlay_images(base_image, overlay_image):
         return overlay_image  # Return the overlay if base is None, or return None if both are None
     
     combined = base_image.copy()
-    combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    # combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
     return combined
 
 def save_selections(selections):
