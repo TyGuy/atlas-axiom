@@ -169,35 +169,37 @@ ser.write(b'OPEN\n')  # Send OPEN command to start for the first time
 running = True
 
 while running:
+    
     if ser.in_waiting > 0:
         try:
             data = ser.read().decode('utf-8').strip()
             current_time = time.time()
 
             # Check for duplicate command within 50 milliseconds
-            if data == last_command and (current_time - last_command_time) < 0.5:
+            if data == last_command and (current_time - last_command_time) < 0.05:
                 continue  # Ignore this command if it's a duplicate
 
             # Update the last command and timestamp
             last_command = data
             last_command_time = current_time
-            print(data)
+
             if data == 'RESET':
                 current_image = None
-                screen.fill((0, 0, 0))
                 last_two_images = [None, None]
                 selected_images = []
+                screen.fill((0, 0, 0))  # Clear the screen at the start of each loop iteration
             elif data == 'START':
                 current_image = start_image
                 last_two_images = [None, None]
                 selected_images = []
+                
             elif data == 'SUBMIT':
                 submit_received = True
             elif data.isdigit():
                 image_key = int(data)
                 if image_key in image_files:
                     if image_key not in selected_images:
-                        selected_images.append(image_key) # store only unique selections
+                        selected_images.append(image_key)  # store only unique selections
                     
                     # Keep only the last two selected images
                     if len(selected_images) > 2:
@@ -211,9 +213,9 @@ while running:
                     else:
                         last_two_images = [None, None]
 
-                    
                     # Determine the combined image
                     current_image = overlay_images(last_two_images[0], last_two_images[1])
+                   
                 else:
                     current_image = None
             else:
@@ -229,13 +231,11 @@ while running:
                 current_image = overlay_images(current_image, selected_overlay)
             save_selections(selected_images)  # Save selections and start the file removal process
             ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
-            print("lockingout")
-            submit_received = False # Reset the flag
+            submit_received = False  # Reset the flag
         else:
-            submit_received = False # Reset the flag
+            submit_received = False  # Reset the flag
     
     # Render the current image on the screen
-    
     if current_image:
         screen.fill((0, 0, 0))
         screen.blit(current_image, (0, 0))
