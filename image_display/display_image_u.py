@@ -126,6 +126,7 @@ def wait_for_no_file_on_target():
         time.sleep(10)
     print("No file found. Proceeding with serial data processing.")
     ser.write(b'OPEN\n')  # Send OPEN command via serial once the file is not found
+    print("open issued")
 
 def delete_file_on_target():
     """Delete the selections.txt file on the target machine if it exists."""
@@ -138,6 +139,7 @@ def delete_file_on_target():
 
         delete_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'rm {destination_path}'"
         result = subprocess.run(delete_command, shell=True, capture_output=True)
+        print("File deleted successfully on the target machine.")
         if result.returncode == 0:
             print("File deleted successfully on the target machine.")
         else:
@@ -167,6 +169,7 @@ ser.write(b'OPEN\n')  # Send OPEN command to start for the first time
 running = True
 
 while running:
+    
     if ser.in_waiting > 0:
         try:
             data = ser.read().decode('utf-8').strip()
@@ -182,20 +185,21 @@ while running:
 
             if data == 'RESET':
                 current_image = None
-                screen.fill((0, 0, 0))
                 last_two_images = [None, None]
                 selected_images = []
+                screen.fill((0, 0, 0))  # Clear the screen at the start of each loop iteration
             elif data == 'START':
                 current_image = start_image
                 last_two_images = [None, None]
                 selected_images = []
+                
             elif data == 'SUBMIT':
                 submit_received = True
             elif data.isdigit():
                 image_key = int(data)
                 if image_key in image_files:
                     if image_key not in selected_images:
-                        selected_images.append(image_key) # store only unique selections
+                        selected_images.append(image_key)  # store only unique selections
                     
                     # Keep only the last two selected images
                     if len(selected_images) > 2:
@@ -209,9 +213,9 @@ while running:
                     else:
                         last_two_images = [None, None]
 
-                    
                     # Determine the combined image
                     current_image = overlay_images(last_two_images[0], last_two_images[1])
+                   
                 else:
                     current_image = None
             else:
@@ -227,13 +231,13 @@ while running:
                 current_image = overlay_images(current_image, selected_overlay)
             save_selections(selected_images)  # Save selections and start the file removal process
             ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
-            submit_received = False # Reset the flag
+            submit_received = False  # Reset the flag
         else:
-            submit_received = False # Reset the flag
+            submit_received = False  # Reset the flag
     
     # Render the current image on the screen
-    screen.fill((0, 0, 0))
     if current_image:
+        screen.fill((0, 0, 0))
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
 
