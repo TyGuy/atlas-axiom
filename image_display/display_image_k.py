@@ -207,7 +207,7 @@ while running:
                     key_buffer = "S"
                 elif pygame.K_0 <= event.key <= pygame.K_9:
                     key_buffer += chr(event.key)
-                elif event.key == pygame.K_qz:
+                elif event.key == pygame.K_q:
                     running = False
                 elif event.key == pygame.K_ESCAPE:
                     running = False

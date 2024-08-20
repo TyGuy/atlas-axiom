@@ -135,7 +135,7 @@ def delete_file_on_target():
         target_ip = '10.0.0.63'
         target_user = 'pi'
         target_pass = 'raspberry'
-        destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+        destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
 
         delete_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'rm {destination_path}'"
         result = subprocess.run(delete_command, shell=True, capture_output=True)
@@ -167,26 +167,26 @@ ser.write(b'OPEN\n')  # Send OPEN command to start for the first time
 
 # Main loop
 running = True
-
+data_buffer = ""
 while running:
     if ser.in_waiting > 0:
         try:
             data = ser.read().decode('utf-8').strip()
             current_time = time.time()
 
-            # Check for duplicate command within 50 milliseconds
-            if data == last_command and (current_time - last_command_time) < 0.5:
+            if data == last_command and (current_time - last_command_time) < 0.05:
                 continue  # Ignore this command if it's a duplicate
 
-            # Update the last command and timestamp
             last_command = data
             last_command_time = current_time
-            print(data)
+
+            print(data) # just for debugging
+
             if data == 'RESET':
                 current_image = None
-                screen.fill((0, 0, 0))
                 last_two_images = [None, None]
                 selected_images = []
+                screen.fill((0, 0, 0))  # Clear the screen at the start of each loop iteration
             elif data == 'START':
                 current_image = start_image
                 last_two_images = [None, None]
@@ -197,46 +197,31 @@ while running:
                 image_key = int(data)
                 if image_key in image_files:
                     if image_key not in selected_images:
-                        selected_images.append(image_key) # store only unique selections
-                    
-                    # Keep only the last two selected images
+                        selected_images.append(image_key)  # store only unique selections
                     if len(selected_images) > 2:
                         selected_images = selected_images[-2:]
-                    
-                    # Load the images to overlay
-                    if len(selected_images) == 1:
-                        last_two_images = [load_image(image_files[selected_images[0]]), None]
-                    elif len(selected_images) == 2:
-                        last_two_images = [load_image(image_files[selected_images[0]]), load_image(image_files[selected_images[1]])]
-                    else:
-                        last_two_images = [None, None]
 
-                    
-                    # Determine the combined image
+                    last_two_images = [
+                        load_image(image_files[selected_images[0]]),
+                        load_image(image_files[selected_images[1]]) if len(selected_images) > 1 else None,
+                    ]
+
                     current_image = overlay_images(last_two_images[0], last_two_images[1])
-                else:
-                    current_image = None
-            else:
-                current_image = None
 
         except ValueError:
-            current_image = None
+            pass  # Simply continue; don't set current_image to None here
 
-    # Check if SUBMIT was received, and handle saving and file checking
     if submit_received:
-        if len(selected_images) > 0:
-            if current_image and selected_overlay:
+        if selected_images:
+            if selected_overlay:
                 current_image = overlay_images(current_image, selected_overlay)
-            save_selections(selected_images)  # Save selections and start the file removal process
-            ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
-            print("lockingout")
-            submit_received = False # Reset the flag
-        else:
-            submit_received = False # Reset the flag
-    
-    # Render the current image on the screen
-    
-    if current_image:
+                screen.fill((0, 0, 0))
+                screen.blit(current_image, (0, 0))
+            save_selections(selected_images)
+            ser.write(b'LOCKOUT\n')
+            submit_received = False
+
+    if current_image:  # Always display the last known good image
         screen.fill((0, 0, 0))
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
