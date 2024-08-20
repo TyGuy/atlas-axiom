@@ -139,6 +139,8 @@ def delete_file_on_target():
 # Graceful shutdown handling
 def graceful_shutdown(signum, frame):
     print("Shutting down gracefully...")
+    # Exit fullscreen mode before quitting
+    pygame.display.quit()
     pygame.quit()
     sys.exit()
 
@@ -163,6 +165,7 @@ while running:
             current_time = time.time()
 
             if event.key == pygame.K_RETURN:  # Handle Enter key press
+                print(key_buffer)
                 if key_buffer == "R":
                     current_image = None
                     screen.fill((0, 0, 0))
@@ -204,6 +207,11 @@ while running:
                     key_buffer = "S"
                 elif pygame.K_0 <= event.key <= pygame.K_9:
                     key_buffer += chr(event.key)
+                elif event.key == pygame.K_qz:
+                    running = False
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
+
 
     # Render the current image on the screen
     
@@ -215,10 +223,13 @@ while running:
     if submit_received:
         if current_image and selected_overlay:
             current_image = overlay_images(current_image, selected_overlay)
+            screen.blit(current_image, (0, 0))
+            pygame.display.flip()
         save_selections(selected_images)  # Save selections and start the file removal process
         print("LOCKOUT")  # Simulate LOCKOUT
         submit_received = False  # Reset the flag
     time.sleep(0.1)
 
+pygame.display.quit()
 pygame.quit()
 sys.exit()
