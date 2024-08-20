@@ -6,7 +6,7 @@ MAX_NUMBERS = 4
 
 def print_instructions():
     print("""
-Welcome to the Number Input System!
+Welcome to Direct User Image Input :)
 Instructions:
 1. Type a number (0-16) to add it to the sequence.
 2. Type 's' to submit the sequence and save it to a file.

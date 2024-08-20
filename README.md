@@ -31,7 +31,15 @@ python atax/torch.py
 ```
 
 ### Starting UGS
-Just run `start_ugs` from anywhere.
+Just run `start_ugs` from anywhere. This should actually work now.
+
+### Doing "direct UGI" from same pi:
+From terminal window:
+```shell
+cd ~/atlas
+python atax/direct_ugi.py
+```
+
 
 ### Other notes:
 * Make sure the thing is at machine 0,0 (below/left of canvas 0,0), and that Z is at 0, before starting the script
