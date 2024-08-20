@@ -64,6 +64,10 @@ class BurnManager:
         if self.monitor_thread.is_alive():
             self.monitor_thread.join()
 
+    def is_burning_user_image(self):
+        with self.lock:
+            return self.user_sequence_waiting and self.is_burning
+
     def run_burn_cycle(self):
         """Main loop for handling the burning process."""
         while self.is_running:

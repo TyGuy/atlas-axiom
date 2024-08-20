@@ -38,6 +38,7 @@ ser = None
 
 cleanup_started = False
 
+is_burning_user_image = False
 
 # sandeeps stuff here
 
@@ -132,36 +133,51 @@ def init(basefile_name):
     global burn_manager, ser
     ser = serial.Serial(GRBL_port_path, BAUD_RATE)
     GPIO.setmode(GPIO.BCM) 
+
+    # init burn manager
     burn_manager = BurnManager(basefile_name, ser, GPIO)
-    # move to the origin:
+
+    # init the lights, and turn on lower lights:
+    GPIO.setup(UPPER_LIGHTS_PIN, GPIO.OUT)
+    GPIO.setup(LOWER_LIGHTS_PIN, GPIO.OUT)
+    GPIO.output(LOWER_LIGHTS_PIN, GPIO.HIGH)
+
+    # move to the origin and let machine know it's there:
     go_to_position(ser, X_MACHINE_OFFSET, Y_MACHINE_OFFSET)
     tell_machine_its_at_origin(ser)
     
 
 # Pipeline is now finished, and we need to find an available device to run our pipeline
-def loop():
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="The main burn loop for the amazing Atlas machine.")
+    parser.add_argument('--basefile', type=lambda b: validate_basefile(b, valid_basefiles),
+                        help=f"The basefile to use. Must be one of {', '.join(valid_basefiles)}.", default=None)
+    args = parser.parse_args()
+
+    init(args.basefile)
+
     with depthai.Device(pipeline) as device:
-        q_rgb = device.getOutputQueue("rgb", maxSize=4, blocking=False)
-        q_nn = device.getOutputQueue("nn", maxSize=4, blocking=False)
-        frame = None
-        detections = []
-        prevpeople = 0
-        nextplaytime = datetime.now() + timedelta(seconds=15)
-
-        def frameNorm(frame, bbox):
-            normVals = np.full(len(bbox), frame.shape[0])
-            normVals[::2] = frame.shape[1]
-            return (np.clip(np.array(bbox), 0, 1) * normVals).astype(int)
-        
-
-        # tyler loop 
-        global burn_manager, ser
         handle_termination(burn_manager, ser)
 
         try:
+            q_rgb = device.getOutputQueue("rgb", maxSize=4, blocking=False)
+            q_nn = device.getOutputQueue("nn", maxSize=4, blocking=False)
+            frame = None
+            detections = []
+            prevpeople = 0
+            nextplaytime = datetime.now() + timedelta(seconds=15)
+
+            def frameNorm(frame, bbox):
+                normVals = np.full(len(bbox), frame.shape[0])
+                normVals[::2] = frame.shape[1]
+                return (np.clip(np.array(bbox), 0, 1) * normVals).astype(int)
+            # tyler loop
+
             burn_manager.start()
+
             while True:
-                # TODO: eventually incorporate other code here.
+                ### Handle camera inputs:
                 in_rgb = q_rgb.tryGet()
                 in_nn = q_nn.tryGet()
 
@@ -182,7 +198,7 @@ def loop():
                             print("play from folder hello")
                             audio_process = play_random_audio('audiofiles/hello')
                             prevpeople = npeople
-                            
+ 
                         elif npeople < prevpeople:
                             # Play random bye audio
                             audio_process = play_random_audio('audiofiles/bye')
@@ -196,7 +212,23 @@ def loop():
                     #     bbox = frameNorm(frame, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
                     #     cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), 2)
                     # cv2.imshow("preview", frame)
+                
+                ### Handle change in burn state, and control lights:
+                if burn_manager.is_burning_user_image():
+                    if not is_burning_user_image:
+                        print("Burning user image (start).")
+                        play_random_audio('audiofiles/burning_user_selection')
+                        GPIO.output(UPPER_LIGHTS_PIN, GPIO.HIGH)
+                        is_burning_user_image = True
+                else:
+                    if is_burning_user_image:
+                        print("Done burning user image (end).")
+                        play_random_audio('audiofiles/burningbasefile')
+                        GPIO.output(UPPER_LIGHTS_PIN, GPIO.LOW)
+                        is_burning_user_image = False
+
                 continue
+
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -204,13 +236,3 @@ def loop():
             tell_machine_its_at_origin(ser)
             burn_manager.stop()
             sys.exit(1)
-    
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="The main burn loop for the amazing Atlas machine.")
-    parser.add_argument('--basefile', type=lambda b: validate_basefile(b, valid_basefiles), 
-                        help=f"The basefile to use. Must be one of {', '.join(valid_basefiles)}.", default=None)
-    args = parser.parse_args()
-
-    init(args.basefile)
-    loop()
