@@ -174,7 +174,7 @@ while running:
             data = ser.read().decode('utf-8').strip()
             current_time = time.time()
 
-            if data == last_command and (current_time - last_command_time) < 0.05:
+            if data == last_command and (current_time - last_command_time) < 1:
                 continue  # Ignore this command if it's a duplicate
 
             last_command = data
