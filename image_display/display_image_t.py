@@ -79,14 +79,14 @@ def save_selections(selections):
     """Save the last two selected image numbers to a text file with spaces separating the numbers and a zero at the end."""
     last_two_selections = selections[-2:]
     selections_str = ' '.join(map(str, last_two_selections)) + ' 0'
-    file_path = 'selections.txt'
+    file_path = 'user_sequence.txt'
     with open(file_path, 'w') as file:
         file.write(selections_str + '\n')
 
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
 
     scp_command = [
         'sshpass', '-p', target_pass, 'scp', file_path, f'{target_user}@{target_ip}:{destination_path}'
@@ -107,11 +107,11 @@ def save_selections(selections):
     wait_for_no_file_on_target()  # Wait only after submitting and transferring the file
 
 def file_exists_on_target():
-    """Check if the selections.txt file exists on the target machine."""
+    """Check if the user_sequence.txt file exists on the target machine."""
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
     
     check_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'test -f {destination_path}'"
     result = subprocess.run(check_command, shell=True, capture_output=True)
@@ -119,8 +119,8 @@ def file_exists_on_target():
     return result.returncode == 0
 
 def wait_for_no_file_on_target():
-    """Poll the target machine until selections.txt is not found."""
-    print("Polling for the absence of selections.txt on the target machine...")
+    """Poll the target machine until user_sequence.txt is not found."""
+    print("Polling for the absence of user_sequence.txt on the target machine...")
     while file_exists_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
@@ -129,9 +129,9 @@ def wait_for_no_file_on_target():
     print("open issued")
 
 def delete_file_on_target():
-    """Delete the selections.txt file on the target machine if it exists."""
+    """Delete the user_sequence.txt file on the target machine if it exists."""
     if file_exists_on_target():
-        print("Deleting existing selections.txt on the target machine...")
+        print("Deleting existing user_sequence.txt on the target machine...")
         target_ip = '10.0.0.63'
         target_user = 'pi'
         target_pass = 'raspberry'
