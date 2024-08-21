@@ -5,7 +5,7 @@ import time
 import subprocess
 import os
 import signal
-
+DEBOUNCE = 0.1  # Start with 0.1 seconds, adjust as needed
 # Initialize Pygame
 pygame.init()
 
@@ -47,6 +47,7 @@ last_two_images = [None, None]
 current_image = None
 selected_images = []
 submit_received = False
+buffer = ""  # Buffer to hold incoming serial data
 
 # To track the last command and its timestamp
 last_command = None
@@ -70,8 +71,6 @@ def overlay_images(base_image, overlay_image):
     if overlay_image is None:
         return base_image  # If the overlay image is None, return the base image
     combined = base_image.copy()
-    
-    # combined.blit(overlay_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
     combined.blit(overlay_image, (0, 0))
     return combined
 
@@ -79,14 +78,14 @@ def save_selections(selections):
     """Save the last two selected image numbers to a text file with spaces separating the numbers and a zero at the end."""
     last_two_selections = selections[-2:]
     selections_str = ' '.join(map(str, last_two_selections)) + ' 0'
-    file_path = 'selections.txt'
+    file_path = 'user_sequence.txt'
     with open(file_path, 'w') as file:
         file.write(selections_str + '\n')
 
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
 
     scp_command = [
         'sshpass', '-p', target_pass, 'scp', file_path, f'{target_user}@{target_ip}:{destination_path}'
@@ -107,11 +106,11 @@ def save_selections(selections):
     wait_for_no_file_on_target()  # Wait only after submitting and transferring the file
 
 def file_exists_on_target():
-    """Check if the selections.txt file exists on the target machine."""
+    """Check if the user_sequence.txt file exists on the target machine."""
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
     
     check_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'test -f {destination_path}'"
     result = subprocess.run(check_command, shell=True, capture_output=True)
@@ -119,22 +118,23 @@ def file_exists_on_target():
     return result.returncode == 0
 
 def wait_for_no_file_on_target():
-    """Poll the target machine until selections.txt is not found."""
-    print("Polling for the absence of selections.txt on the target machine...")
+    """Poll the target machine until user_sequence.txt is not found."""
+    print("Polling for the absence of user_sequence.txt on the target machine...")
     while file_exists_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
     print("No file found. Proceeding with serial data processing.")
     ser.write(b'OPEN\n')  # Send OPEN command via serial once the file is not found
+    print("open issued")
 
 def delete_file_on_target():
-    """Delete the selections.txt file on the target machine if it exists."""
+    """Delete the user_sequence.txt file on the target machine if it exists."""
     if file_exists_on_target():
-        print("Deleting existing selections.txt on the target machine...")
+        print("Deleting existing user_sequence.txt on the target machine...")
         target_ip = '10.0.0.63'
         target_user = 'pi'
         target_pass = 'raspberry'
-        destination_path = f'/home/{target_user}/atlas/state/selections.txt'
+        destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
 
         delete_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'rm {destination_path}'"
         result = subprocess.run(delete_command, shell=True, capture_output=True)
@@ -165,75 +165,67 @@ ser.write(b'OPEN\n')  # Send OPEN command to start for the first time
 
 # Main loop
 running = True
-
 while running:
     if ser.in_waiting > 0:
         try:
-            data = ser.read().decode('utf-8').strip()
-            current_time = time.time()
+            data = ser.read().decode('utf-8')  # Read data from the serial port
+            buffer += data  # Append data to the buffer
 
-            # Check for duplicate command within 50 milliseconds
-            if data == last_command and (current_time - last_command_time) < 0.05:
-                continue  # Ignore this command if it's a duplicate
+            # Process each command in the buffer, assuming '\n' as a command delimiter
+            while '\n' in buffer:
+                command, buffer = buffer.split('\n', 1)  # Split buffer at first '\n'
+                command = command.strip()  # Strip any whitespace/newlines from the command
+                current_time = time.time()
 
-            # Update the last command and timestamp
-            last_command = data
-            last_command_time = current_time
+                if command == last_command and (current_time - last_command_time) < DEBOUNCE:
+                    continue  # Ignore this command if it's a duplicate
 
-            if data == 'RESET':
-                current_image = None
-                screen.fill((0, 0, 0))
-                last_two_images = [None, None]
-                selected_images = []
-            elif data == 'START':
-                current_image = start_image
-                last_two_images = [None, None]
-                selected_images = []
-            elif data == 'SUBMIT':
-                submit_received = True
-            elif data.isdigit():
-                image_key = int(data)
-                if image_key in image_files:
-                    if image_key not in selected_images:
-                        selected_images.append(image_key) # store only unique selections
-                    
-                    # Keep only the last two selected images
-                    if len(selected_images) > 2:
-                        selected_images = selected_images[-2:]
-                    
-                    # Load the images to overlay
-                    if len(selected_images) == 1:
-                        last_two_images = [load_image(image_files[selected_images[0]]), None]
-                    elif len(selected_images) == 2:
-                        last_two_images = [load_image(image_files[selected_images[0]]), load_image(image_files[selected_images[1]])]
-                    else:
-                        last_two_images = [None, None]
+                last_command = command
+                last_command_time = current_time
 
-                    
-                    # Determine the combined image
-                    current_image = overlay_images(last_two_images[0], last_two_images[1])
-                else:
+                print(command)  # Debugging output
+
+                if command == 'RESET':
                     current_image = None
-            else:
-                current_image = None
+                    last_two_images = [None, None]
+                    selected_images = []
+                    screen.fill((0, 0, 0))  # Clear the screen at the start of each loop iteration
+                elif command == 'START':
+                    current_image = start_image
+                    last_two_images = [None, None]
+                    selected_images = []
+                elif command == 'SUBMIT':
+                    submit_received = True
+                elif command.isdigit():
+                    image_key = int(command)
+                    if image_key in image_files:
+                        if image_key not in selected_images:
+                            selected_images.append(image_key)  # store only unique selections
+                        if len(selected_images) > 2:
+                            selected_images = selected_images[-2:]
+
+                        last_two_images = [
+                            load_image(image_files[selected_images[0]]),
+                            load_image(image_files[selected_images[1]]) if len(selected_images) > 1 else None,
+                        ]
+
+                        current_image = overlay_images(last_two_images[0], last_two_images[1])
 
         except ValueError:
-            current_image = None
+            pass  # Simply continue; don't set current_image to None here
 
-    # Check if SUBMIT was received, and handle saving and file checking
     if submit_received:
-        if len(selected_images) > 0:
-            if current_image and selected_overlay:
+        if len(selected_images) > 0: # atleast 1 image
+            if selected_overlay:
                 current_image = overlay_images(current_image, selected_overlay)
-            save_selections(selected_images)  # Save selections and start the file removal process
-            ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
-            submit_received = False # Reset the flag
-        else:
-            submit_received = False # Reset the flag
-    
-    # Render the current image on the screen
-    screen.fill((0, 0, 0))
-    if current_image:
+                screen.fill((0, 0, 0))
+                screen.blit(current_image, (0, 0))
+            save_selections(selected_images)
+            ser.write(b'LOCKOUT\n')
+            submit_received = False
+
+    if current_image:  # Always display the last known good image
+        screen.fill((0, 0, 0))
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
 

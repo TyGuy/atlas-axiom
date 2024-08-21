@@ -195,7 +195,10 @@ while running:
                         
                         # Determine the combined image
                         current_image = overlay_images(image1, image2)
-
+                elif event.key == pygame.K_q:
+                    running = False
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
                 key_buffer = ""  # Clear the buffer after processing
 
             else:
@@ -207,10 +210,7 @@ while running:
                     key_buffer = "S"
                 elif pygame.K_0 <= event.key <= pygame.K_9:
                     key_buffer += chr(event.key)
-                elif event.key == pygame.K_q:
-                    running = False
-                elif event.key == pygame.K_ESCAPE:
-                    running = False
+
 
 
     # Render the current image on the screen
@@ -221,8 +221,8 @@ while running:
 
     # Check if SUBMIT was received, and handle saving and file checking
     if submit_received:
-        if current_image and selected_overlay:
-            current_image = overlay_images(current_image, selected_overlay)
+        if selected_overlay:
+            current_image = selected_overlay
             screen.blit(current_image, (0, 0))
             pygame.display.flip()
         save_selections(selected_images)  # Save selections and start the file removal process
