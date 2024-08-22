@@ -1,5 +1,6 @@
 import pygame
 import sys
+import serial
 import time
 import subprocess
 import os
@@ -16,7 +17,7 @@ screen_height = info.current_h
 # Set up the display in fullscreen mode
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
 
-# Define the mapping of keyboard inputs to image files
+# Define the mapping of serial commands to image files
 image_files = {
     1: "Gear.png",
     2: "Boat.png",
@@ -36,12 +37,16 @@ image_files = {
     16: "Scale.png",
 }
 
+# Configure serial port
+serial_port = '/dev/ttyACM0'  # Replace with your serial port
+baud_rate = 9600
+ser = serial.Serial(serial_port, baud_rate, timeout=1)
+
 # Initialize variables
 last_two_images = [None, None]
 current_image = None
 selected_images = []
 submit_received = False
-key_buffer = ""  # Buffer to hold key presses
 
 # To track the last command and its timestamp
 last_command = None
@@ -74,14 +79,14 @@ def save_selections(selections):
     """Save the last two selected image numbers to a text file with spaces separating the numbers and a zero at the end."""
     last_two_selections = selections[-2:]
     selections_str = ' '.join(map(str, last_two_selections)) + ' 0'
-    file_path = 'user_sequence.txt'
+    file_path = 'selections.txt'
     with open(file_path, 'w') as file:
         file.write(selections_str + '\n')
 
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
+    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
 
     scp_command = [
         'sshpass', '-p', target_pass, 'scp', file_path, f'{target_user}@{target_ip}:{destination_path}'
@@ -98,15 +103,15 @@ def save_selections(selections):
             print(result.stderr)
     except Exception as e:
         print(f"Error occurred during file transfer: {e}")
+
     wait_for_no_file_on_target()  # Wait only after submitting and transferring the file
-    
 
 def file_exists_on_target():
-    """Check if the user_sequence.txt file exists on the target machine."""
+    """Check if the selections.txt file exists on the target machine."""
     target_ip = '10.0.0.63'
     target_user = 'pi'
     target_pass = 'raspberry'
-    destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
+    destination_path = f'/home/{target_user}/atlas/state/selections.txt'
     
     check_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'test -f {destination_path}'"
     result = subprocess.run(check_command, shell=True, capture_output=True)
@@ -114,21 +119,22 @@ def file_exists_on_target():
     return result.returncode == 0
 
 def wait_for_no_file_on_target():
-    """Poll the target machine until user_sequence.txt is not found."""
-    print("Polling for the absence of user_sequence.txt on the target machine...")
+    """Poll the target machine until selections.txt is not found."""
+    print("Polling for the absence of selections.txt on the target machine...")
     while file_exists_on_target():
         print("File found. Waiting 10 seconds before retrying...")
         time.sleep(10)
-    print("No file found. Proceeding with data processing.")
+    print("No file found. Proceeding with serial data processing.")
+    ser.write(b'OPEN\n')  # Send OPEN command via serial once the file is not found
 
 def delete_file_on_target():
-    """Delete the user_sequence.txt file on the target machine if it exists."""
+    """Delete the selections.txt file on the target machine if it exists."""
     if file_exists_on_target():
-        print("Deleting existing user_sequence.txt on the target machine...")
+        print("Deleting existing selections.txt on the target machine...")
         target_ip = '10.0.0.63'
         target_user = 'pi'
         target_pass = 'raspberry'
-        destination_path = f'/home/{target_user}/atlas/state/user_sequence.txt'
+        destination_path = f'/home/{target_user}/atlas/state/selections.txt'
 
         delete_command = f"sshpass -p {target_pass} ssh {target_user}@{target_ip} 'rm {destination_path}'"
         result = subprocess.run(delete_command, shell=True, capture_output=True)
@@ -140,8 +146,8 @@ def delete_file_on_target():
 # Graceful shutdown handling
 def graceful_shutdown(signum, frame):
     print("Shutting down gracefully...")
-    # Exit fullscreen mode before quitting
-    pygame.display.quit()
+    if ser.is_open:
+        ser.close()
     pygame.quit()
     sys.exit()
 
@@ -152,95 +158,101 @@ signal.signal(signal.SIGTERM, graceful_shutdown)
 delete_file_on_target()
 
 # Load special images
-ready_image = load_image("Ready.png")
 start_image = load_image("Start.png")
 selected_overlay = load_image("Selected.png")
+
+ser.write(b'OPEN\n')  # Send OPEN command to start for the first time
 
 # Main loop
 running = True
 
-#display ready image for first time
-current_image = ready_image
-screen.fill((0, 0, 0))
-screen.blit(current_image, (0, 0))
-pygame.display.flip()
-current_image = None
-
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
-                running = False
-            elif event.key == pygame.K_RETURN:  # Handle Enter key press
-                #print(key_buffer)
-                if key_buffer == "R":
+    if ser.in_waiting > 0:
+        try:
+            data = ser.read().decode('utf-8').strip()
+            current_time = time.time()
+
+            # Check for duplicate command within 50 milliseconds
+            if data == last_command and (current_time - last_command_time) < 0.05:
+                continue  # Ignore this command if it's a duplicate
+
+            # Update the last command and timestamp
+            last_command = data
+            last_command_time = current_time
+
+            if data == 'RESET':
+                current_image = None
+                screen.fill((0, 0, 0))
+                last_two_images = [None, None]
+                selected_images = []
+            elif data == 'START':
+                current_image = start_image
+                last_two_images = [None, None]
+                selected_images = []
+            elif data == 'SUBMIT':
+                submit_received = True
+            elif data.isdigit():
+                image_key = int(data)
+                if image_key in image_files:
+                    if image_key not in selected_images:
+                        selected_images.append(image_key) # store only unique selections
+                    
+                    # Keep only the last two selected images
+                    if len(selected_images) > 2:
+                        selected_images = selected_images[-2:]
+                    
+                    # Load the images to overlay
+                    if len(selected_images) == 1:
+                        last_two_images = [load_image(image_files[selected_images[0]]), None]
+                    elif len(selected_images) == 2:
+                        last_two_images = [load_image(image_files[selected_images[0]]), load_image(image_files[selected_images[1]])]
+                    else:
+                        last_two_images = [None, None]
+
+                    
+                    # Determine the combined image
+                    current_image = overlay_images(last_two_images[0], last_two_images[1])
+                else:
                     current_image = None
-                    screen.fill((0, 0, 0))
-                    last_two_images = [None, None]
-                    selected_images = []
-                elif key_buffer == "O":
-                    current_image = start_image
-                    last_two_images = [None, None]
-                    selected_images = []
-                    screen.fill((0, 0, 0))
-                elif key_buffer == "S":
-                    submit_received = True
-                    screen.fill((0, 0, 0))
-                elif key_buffer.isdigit():
-                    image_key = int(key_buffer)
-                    screen.fill((0, 0, 0))
-                    if image_key in image_files:
-                        if image_key not in selected_images:
-                            selected_images.append(image_key)
-                        # Keep only the last two selected images
-                        if len(selected_images) > 2:
-                            selected_images = selected_images[-2:]
-                        
-                        # Load the images to overlay
-                        image1 = load_image(image_files[selected_images[0]]) if len(selected_images) > 0 else None
-                        image2 = load_image(image_files[selected_images[1]]) if len(selected_images) > 1 else None
-                        
-                        # Determine the combined image
-                        current_image = overlay_images(image1, image2)
-                key_buffer = ""  # Clear the buffer after processing
-
             else:
-                if event.key == pygame.K_r:
-                    key_buffer = "R"
-                elif event.key == pygame.K_o:
-                    key_buffer = "O"
-                elif event.key == pygame.K_s:
-                    key_buffer = "S"
-                elif pygame.K_0 <= event.key <= pygame.K_9:
-                    key_buffer += chr(event.key)
+                current_image = None
 
+        except ValueError:
+            current_image = None
+
+    # Check if SUBMIT was received, and handle saving and file checking
+    if submit_received:
+        if len(selected_images) > 0:
+            if current_image and selected_overlay:
+                current_image = overlay_images(current_image, selected_overlay)
+            save_selections(selected_images)  # Save selections and start the file removal process
+            ser.write(b'LOCKOUT\n')  # Send LOCKOUT command via serial
+            submit_received = False # Reset the flag
+        else:
+            submit_received = False # Reset the flag
+    
     # Render the current image on the screen
+    screen.fill((0, 0, 0))
     if current_image:
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
 
-    # Check if SUBMIT was received, and handle saving and file checking
-    if submit_received:
-        if selected_overlay:
-            current_image = selected_overlay
-            screen.fill((0, 0, 0))
-            screen.blit(current_image, (0, 0))
-            pygame.display.flip()
-        print(selected_images)
-        print("LOCKOUT")  # Simulate LOCKOUT
-        save_selections(selected_images)  # Save selections and start the file removal process
-        time.sleep(2)
-        # once selections has been deleted  show ready image again
-        print("READY") 
-        current_image = ready_image
-        screen.fill((0, 0, 0))
-        screen.blit(current_image, (0, 0))
-        pygame.display.flip()
-        submit_received = False  # Reset the flag
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+            elif event.key == pygame.K_q:
+                running = False
+                # Exit fullscreen mode before quitting
+                pygame.display.quit()
+                pygame.quit()
+                sys.exit()
+
     time.sleep(0.1)
 
-pygame.display.quit()
+if ser.is_open:
+    ser.close()
 pygame.quit()
 sys.exit()

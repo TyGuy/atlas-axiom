@@ -99,7 +99,6 @@ def save_selections(selections):
     except Exception as e:
         print(f"Error occurred during file transfer: {e}")
     wait_for_no_file_on_target()  # Wait only after submitting and transferring the file
-    
 
 def file_exists_on_target():
     """Check if the user_sequence.txt file exists on the target machine."""
@@ -152,29 +151,21 @@ signal.signal(signal.SIGTERM, graceful_shutdown)
 delete_file_on_target()
 
 # Load special images
-ready_image = load_image("Ready.png")
 start_image = load_image("Start.png")
 selected_overlay = load_image("Selected.png")
 
 # Main loop
 running = True
 
-#display ready image for first time
-current_image = ready_image
-screen.fill((0, 0, 0))
-screen.blit(current_image, (0, 0))
-pygame.display.flip()
-current_image = None
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
-                running = False
-            elif event.key == pygame.K_RETURN:  # Handle Enter key press
-                #print(key_buffer)
+            current_time = time.time()
+
+            if event.key == pygame.K_RETURN:  # Handle Enter key press
+                print(key_buffer)
                 if key_buffer == "R":
                     current_image = None
                     screen.fill((0, 0, 0))
@@ -204,6 +195,7 @@ while running:
                         
                         # Determine the combined image
                         current_image = overlay_images(image1, image2)
+
                 key_buffer = ""  # Clear the buffer after processing
 
             else:
@@ -215,29 +207,26 @@ while running:
                     key_buffer = "S"
                 elif pygame.K_0 <= event.key <= pygame.K_9:
                     key_buffer += chr(event.key)
+                elif event.key == pygame.K_q:
+                    running = False
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
+
 
     # Render the current image on the screen
+    
     if current_image:
         screen.blit(current_image, (0, 0))
     pygame.display.flip()
 
     # Check if SUBMIT was received, and handle saving and file checking
     if submit_received:
-        if selected_overlay:
-            current_image = selected_overlay
-            screen.fill((0, 0, 0))
+        if current_image and selected_overlay:
+            current_image = overlay_images(current_image, selected_overlay)
             screen.blit(current_image, (0, 0))
             pygame.display.flip()
-        print(selected_images)
-        print("LOCKOUT")  # Simulate LOCKOUT
         save_selections(selected_images)  # Save selections and start the file removal process
-        time.sleep(2)
-        # once selections has been deleted  show ready image again
-        print("READY") 
-        current_image = ready_image
-        screen.fill((0, 0, 0))
-        screen.blit(current_image, (0, 0))
-        pygame.display.flip()
+        print("LOCKOUT")  # Simulate LOCKOUT
         submit_received = False  # Reset the flag
     time.sleep(0.1)
 
